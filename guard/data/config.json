@@ -1,0 +1,50 @@
+{
+  "enabled": false,
+  "auto_start": true,
+  "block_via_proxy": true,
+  "proxy": {
+    "host": "127.0.0.1",
+    "port": 8888,
+    "upstream_proxy": "",
+    "upstream_bypass": "",
+    "connect_timeout": 8,
+    "bypass_localhost": true,
+    "max_header_bytes": 65536
+  },
+  "api": {
+    "host": "127.0.0.1",
+    "port": 8899
+  },
+  "block": {
+    "blacklist": true,
+    "heuristic": true,
+    "adult": true,
+    "ml_convict": true,
+    "ml_hint": false,
+    "dynamic_from_log": true,
+    "dynamic_host_level": true,
+    "dynamic_trusted_url_only": true,
+    "block_https_tunnel": true,
+    "heuristic_on_tunnel": true,
+    "warn_prob": 0.9,
+    "warn_score": 40,
+    "fail_open": true
+  },
+  "sysproxy": {
+    "server": "127.0.0.1:8888",
+    "bypass": "localhost;127.0.0.1;*.local;<local>",
+    "restore_on_exit": true
+  },
+  "cache": {
+    "ttl": 60,
+    "max": 5000
+  },
+  "log": {
+    "max_entries": 2000,
+    "log_all_requests": false
+  },
+  "logwatch": {
+    "interval": 2.0,
+    "max_entries": 20000
+  }
+}

@@ -41,6 +41,8 @@ ext.cnf
 # config.json 内含真实 api_keys，请勿提交；如需要模板可提交 config.example.json
 config.json
 config.local.json
+# 例外：guard 模块自身的运行配置（不含任何密钥；缺失时 runtime.py 会自动重建）
+!guard/data/config.json
 .env
 .env.*
 !.env.example
