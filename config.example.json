@@ -1,0 +1,59 @@
+{
+    "detection": {
+        "enable_heuristic": true,
+        "enable_blacklist": true,
+        "enable_dns_check": true,
+        "enable_api_check": true,
+        "heuristic_threshold": 60,
+        "max_url_length": 2000,
+        "check_shortened_urls": true,
+        "check_suspicious_tlds": true,
+        "check_typosquatting": true,
+        "check_ip_url": true,
+        "check_suspicious_keywords": true,
+        "check_deceptive_domain": true,
+        "check_dga": true,
+        "check_dangerous_extension": true,
+        "check_malicious_patterns": true,
+        "check_adult_content": true,
+
+        "enable_ml_check": true,
+        "ml_mode": "enforce",
+        "ml_model_path": "data/models/lgs_model.pickle",
+        "ml_threshold": null,
+        "ml_confidence": 0.9,
+        "ml_affect_score": false,
+        "ml_trigger_intercept": true,
+        "ml_models": {
+            "domain": {
+                "enabled": true,
+                "path": "data/models/domain_model.pkl",
+                "confidence": 0.9,
+                "trigger_intercept": false
+            },
+            "path": {
+                "enabled": true,
+                "path": "data/models/path_model.pkl",
+                "confidence": 0.9,
+                "trigger_intercept": true
+            }
+        }
+    },
+    "api_keys": {
+        "google_safe_browsing": "",
+        "virustotal": "",
+        "phish_tank": "",
+        "deepseek": ""
+    },
+    "monitoring": {
+        "enable_clipboard_monitor": true,
+        "check_interval": 1.0,
+        "auto_intercept": true
+    },
+    "logging": {
+        "enable_logging": true,
+        "log_file": "detection_log.json",
+        "max_log_entries": 1000,
+        "verbose_startup": false
+    }
+}
