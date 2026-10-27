@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-10-20 21:20:09",
+  "target_per_cat": 20000,
+  "seed": 42,
+  "categories": {
+    "恶意下载": {
+      "available": 1857,
+      "used": 1857
+    },
+    "钓鱼": {
+      "available": 152009,
+      "used": 20000
+    }
+  },
+  "total_rows": 21857,
+  "url_rows": 18363,
+  "skipped_leak": 4181,
+  "skipped_ip": 31562,
+  "sources": {
+    "urlhaus": {
+      "category": "恶意下载",
+      "parsed": 33798,
+      "new_hosts": 567
+    },
+    "urlhaus-domains": {
+      "category": "恶意下载",
+      "parsed": 17886,
+      "new_hosts": 1290
+    },
+    "openphish": {
+      "category": "钓鱼",
+      "parsed": 300,
+      "new_hosts": 275
+    },
+    "phishingarmy": {
+      "category": "钓鱼",
+      "parsed": 155901,
+      "new_hosts": 151734
+    }
+  },
+  "errors": {}
+}

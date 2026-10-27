@@ -1,0 +1,26 @@
+{
+  "AUC": 0.91172,
+  "threshold": 0.9958982016236757,
+  "recall_at_0fpr": 0.04783,
+  "fp_test_neg": 3,
+  "fp_realtraffic": 0,
+  "engine_recall": 0.27408,
+  "or_recall": 0.29836,
+  "by_category": {
+    "恶意URL": {
+      "hit": 19,
+      "total": 627
+    },
+    "钓鱼网站": {
+      "hit": 1,
+      "total": 20
+    },
+    "色情网站": {
+      "hit": 565,
+      "total": 11583
+    }
+  },
+  "train": 212791,
+  "test_pos": 12230,
+  "test_neg": 37457
+}

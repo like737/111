@@ -1,0 +1,14 @@
+{
+  "source": "tranco.csv.zip",
+  "test_ratio": 0.2,
+  "seed": 42,
+  "pos": 64866,
+  "neg": 196627,
+  "dropped": {
+    "trusted": 7008,
+    "shared": 909,
+    "noise": 116,
+    "invalid": 42853
+  },
+  "split_leak": 0
+}

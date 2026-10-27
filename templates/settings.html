@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}⚙️ 系统设置 - 恶意链接检测系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>
+                    {{ icon('gear', 20, '设置') }}
+                    系统设置
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('settings_update') }}">
+                    
+                    <h5 class="mb-3">{{ icon('search', 20, '检测') }} 检测设置</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="enable_heuristic" name="enable_heuristic" 
+                                       {% if config.detection.enable_heuristic %}checked{% endif %}>
+                                <label class="form-check-label" for="enable_heuristic">启用启发式分析</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="enable_blacklist" name="enable_blacklist" 
+                                       {% if config.detection.enable_blacklist %}checked{% endif %}>
+                                <label class="form-check-label" for="enable_blacklist">启用黑名单匹配</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="enable_dns_check" name="enable_dns_check" 
+                                       {% if config.detection.enable_dns_check %}checked{% endif %}>
+                                <label class="form-check-label" for="enable_dns_check">启用DNS解析检查</label>
+                            </div>
+                            <div class="form-text">域名无法解析时判定为可疑（+15分，会略微增加检测耗时）</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="enable_api_check" name="enable_api_check" 
+                                       {% if config.detection.enable_api_check %}checked{% endif %}>
+                                <label class="form-check-label" for="enable_api_check">启用AI辅助检测 (DeepSeek)</label>
+                            </div>
+                            <div class="form-text">开启后由大模型复核链接，未配置密钥时自动跳过</div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="heuristic_threshold" class="form-label">
+                            风险评分阈值 (当前: {{ config.detection.heuristic_threshold }})
+                        </label>
+                        <input type="number" class="form-control" id="heuristic_threshold" 
+                               name="heuristic_threshold" min="0" max="100" 
+                               value="{{ config.detection.heuristic_threshold }}">
+                        <div class="form-text">本地启发式分析的原始风险分达到该值即判定为恶意链接（0-100，值越小越严格，默认 60），建议 40-70</div>
+                    </div>
+
+                    <h5 class="mb-3">{{ icon('monitor', 20, '监控') }} 监控设置</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="enable_clipboard_monitor" name="enable_clipboard_monitor" 
+                                       {% if config.monitoring.enable_clipboard_monitor %}checked{% endif %}>
+                                <label class="form-check-label" for="enable_clipboard_monitor">启用剪贴板监控</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="auto_intercept" name="auto_intercept" 
+                                       {% if config.monitoring.auto_intercept %}checked{% endif %}>
+                                <label class="form-check-label" for="auto_intercept">自动拦截恶意链接</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="check_interval" class="form-label">
+                            监控检查间隔 (秒，当前: {{ config.monitoring.check_interval }})
+                        </label>
+                        <input type="number" step="0.1" class="form-control" id="check_interval" 
+                               name="check_interval" min="0.5" max="10" 
+                               value="{{ config.monitoring.check_interval }}">
+                    </div>
+
+                    <h5 class="mb-3">{{ icon('key', 20, '密钥') }} API密钥设置 (可选)</h5>
+                    {#
+                        已移除 Google Safe Browsing / VirusTotal 的输入界面：
+                        这两个 Key 目前没有任何检测代码调用（真正接入的外部 API 只有 DeepSeek），
+                        留在页面上会让人误以为"填了就会生效"，因此从设置页删除。
+                        如后续需要接入，可在服务端 config.json 的 api_keys 中手工配置。
+                    #}
+                    <div class="mb-4">
+                        {#
+                            DeepSeek API 密钥（仅服务端维护，页面上不做任何提示文案展示）：
+                              1) 环境变量 DEEPSEEK_API_KEY —— 优先级最高，密钥不落盘（推荐）
+                              2) 服务端 config.json 的 api_keys.deepseek
+                              3) 命令行运行 python main.py，进入「系统设置 → 9」输入
+                            模板只渲染 config.public_config 的掩码值，不含明文，也无法在Web端修改。
+                            使用 Jinja 注释是为了连渲染后的 HTML 源码中也不会出现上述提示。
+                        #}
+                        <label for="deepseek_display" class="form-label">{{ icon('robot', 18, 'AI') }} DeepSeek AI API</label>
+                        <input type="text" class="form-control" id="deepseek_display"
+                               value="{{ config.api_keys.deepseek }}" placeholder="未配置" readonly>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">💾 保存设置</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

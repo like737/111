@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+    body { width: 320px; margin: 0; padding: 14px; font: 13px/1.6 "Segoe UI", "Microsoft YaHei", sans-serif;
+           background: #14182a; color: #eef1f8; }
+    h1 { font-size: 15px; margin: 0 0 2px; display: flex; align-items: center; gap: 8px; }
+    h1 img { width: 20px; height: 20px; }
+    .muted { color: #a8b0c6; font-size: 12px; }
+    .box { border: 1px solid rgba(255,255,255,.14); border-radius: 10px; padding: 10px 12px; margin: 10px 0;
+           background: rgba(255,255,255,.05); }
+    .row { display: flex; justify-content: space-between; gap: 8px; }
+    .ok { color: #22c55e; } .bad { color: #ff4d6d; } .warn { color: #ffb703; }
+    .down { color: #ffd7de; background: rgba(255,77,109,.16); border: 1px solid rgba(255,77,109,.5);
+            border-radius: 8px; padding: 6px 9px; margin-top: 8px; font-size: 12px; line-height: 1.5; }
+    .d-none { display: none; }
+    button { width: 100%; margin-top: 6px; font: inherit; padding: 8px 10px; cursor: pointer;
+             border-radius: 8px; border: 1px solid rgba(255,255,255,.16);
+             background: rgba(255,255,255,.08); color: #eef1f8; }
+    button:hover { background: rgba(255,255,255,.16); }
+</style>
+</head>
+<body>
+    <h1><img src="icons/shield.png" alt="">eyilianjie 拦截守卫</h1>
+    <div class="muted" id="version">版本读取中…</div>
+    <div id="downBanner" class="down d-none">⚠ guard 未运行 —— 当前一律放行</div>
+
+    <div class="box">
+        <div class="row"><span>拦截层</span><span id="apiState">检测中…</span></div>
+        <div class="row"><span>总开关</span><span id="enabled">-</span></div>
+        <div class="row"><span>已拦截次数</span><span id="blocked">-</span></div>
+        <div class="muted" id="diag" style="margin-top:8px;"></div>
+    </div>
+
+    <button id="btnConsole">打开拦截控制台</button>
+    <button id="btnClear">清空判定缓存</button>
+    <button id="btnSelftest">运行自检</button>
+    <div class="muted" style="margin-top:10px">
+        提示：本扩展只负责“打开链接时的拦截页”；真正的拦截规则在 guard 里
+        （Web 端 → 导航栏「拦截」→ 点【开始拦截】）。
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

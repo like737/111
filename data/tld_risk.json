@@ -1,0 +1,297 @@
+{
+  "description": "TLD 恶意富集表（lift = 黑名单内占比 ÷ 负样本内占比）；由 ml_training/build_eval_sets.py 生成",
+  "version": "1.0",
+  "generated_at": "2026-10-20 20:33:09",
+  "source": {
+    "blacklist": 181195,
+    "blacklist_domains": 138342,
+    "negatives": 37457
+  },
+  "policy": {
+    "min_samples": 20,
+    "lift_levels": {
+      "100": 20,
+      "20": 12,
+      "5": 6
+    }
+  },
+  "exempt": [],
+  "tlds": {
+    "mom": {
+      "lift": 118.7,
+      "score": 20,
+      "mal": 877,
+      "neg": 2
+    },
+    "webcam": {
+      "lift": 42.6,
+      "score": 12,
+      "mal": 59,
+      "neg": 0
+    },
+    "sex": {
+      "lift": 38.4,
+      "score": 12,
+      "mal": 142,
+      "neg": 1
+    },
+    "bingo": {
+      "lift": 33.3,
+      "score": 12,
+      "mal": 46,
+      "neg": 0
+    },
+    "il": {
+      "lift": 31.1,
+      "score": 12,
+      "mal": 43,
+      "neg": 0
+    },
+    "sexy": {
+      "lift": 29.5,
+      "score": 12,
+      "mal": 109,
+      "neg": 1
+    },
+    "xxx": {
+      "lift": 29.2,
+      "score": 12,
+      "mal": 863,
+      "neg": 8
+    },
+    "football": {
+      "lift": 26.7,
+      "score": 12,
+      "mal": 37,
+      "neg": 0
+    },
+    "sbs": {
+      "lift": 25.3,
+      "score": 12,
+      "mal": 1866,
+      "neg": 20
+    },
+    "kim": {
+      "lift": 22.4,
+      "score": 12,
+      "mal": 31,
+      "neg": 0
+    },
+    "desi": {
+      "lift": 20.6,
+      "score": 12,
+      "mal": 76,
+      "neg": 1
+    },
+    "christmas": {
+      "lift": 20.2,
+      "score": 12,
+      "mal": 28,
+      "neg": 0
+    },
+    "lat": {
+      "lift": 19.4,
+      "score": 6,
+      "mal": 717,
+      "neg": 10
+    },
+    "tk": {
+      "lift": 18.8,
+      "score": 6,
+      "mal": 26,
+      "neg": 0
+    },
+    "ninja": {
+      "lift": 18.8,
+      "score": 6,
+      "mal": 26,
+      "neg": 0
+    },
+    "photos": {
+      "lift": 18.1,
+      "score": 6,
+      "mal": 25,
+      "neg": 0
+    },
+    "garden": {
+      "lift": 16.8,
+      "score": 6,
+      "mal": 62,
+      "neg": 1
+    },
+    "casa": {
+      "lift": 15.1,
+      "score": 6,
+      "mal": 167,
+      "neg": 3
+    },
+    "porn": {
+      "lift": 14.1,
+      "score": 6,
+      "mal": 209,
+      "neg": 4
+    },
+    "rest": {
+      "lift": 12.3,
+      "score": 6,
+      "mal": 227,
+      "neg": 5
+    },
+    "party": {
+      "lift": 11.9,
+      "score": 6,
+      "mal": 44,
+      "neg": 1
+    },
+    "red": {
+      "lift": 9.1,
+      "score": 6,
+      "mal": 67,
+      "neg": 2
+    },
+    "blue": {
+      "lift": 8.9,
+      "score": 6,
+      "mal": 33,
+      "neg": 1
+    },
+    "homes": {
+      "lift": 8.9,
+      "score": 6,
+      "mal": 33,
+      "neg": 1
+    },
+    "video": {
+      "lift": 8.8,
+      "score": 6,
+      "mal": 162,
+      "neg": 5
+    },
+    "hair": {
+      "lift": 8.7,
+      "score": 6,
+      "mal": 64,
+      "neg": 2
+    },
+    "tube": {
+      "lift": 8.6,
+      "score": 6,
+      "mal": 127,
+      "neg": 4
+    },
+    "skin": {
+      "lift": 8.4,
+      "score": 6,
+      "mal": 62,
+      "neg": 2
+    },
+    "poker": {
+      "lift": 8.1,
+      "score": 6,
+      "mal": 30,
+      "neg": 1
+    },
+    "pics": {
+      "lift": 7.7,
+      "score": 6,
+      "mal": 198,
+      "neg": 7
+    },
+    "pro": {
+      "lift": 7.3,
+      "score": 6,
+      "mal": 2645,
+      "neg": 98
+    },
+    "vu": {
+      "lift": 7.0,
+      "score": 6,
+      "mal": 26,
+      "neg": 1
+    },
+    "movie": {
+      "lift": 6.8,
+      "score": 6,
+      "mal": 25,
+      "neg": 1
+    },
+    "rodeo": {
+      "lift": 6.6,
+      "score": 6,
+      "mal": 49,
+      "neg": 2
+    },
+    "ooo": {
+      "lift": 6.5,
+      "score": 6,
+      "mal": 24,
+      "neg": 1
+    },
+    "yachts": {
+      "lift": 6.1,
+      "score": 6,
+      "mal": 45,
+      "neg": 2
+    },
+    "cam": {
+      "lift": 6.0,
+      "score": 6,
+      "mal": 200,
+      "neg": 9
+    },
+    "mobi": {
+      "lift": 5.8,
+      "score": 6,
+      "mal": 472,
+      "neg": 22
+    },
+    "za": {
+      "lift": 5.7,
+      "score": 6,
+      "mal": 63,
+      "neg": 3
+    },
+    "tr": {
+      "lift": 5.6,
+      "score": 6,
+      "mal": 125,
+      "neg": 6
+    },
+    "lol": {
+      "lift": 5.4,
+      "score": 6,
+      "mal": 501,
+      "neg": 25
+    },
+    "bet": {
+      "lift": 5.4,
+      "score": 6,
+      "mal": 281,
+      "neg": 14
+    },
+    "cyou": {
+      "lift": 5.4,
+      "score": 6,
+      "mal": 321,
+      "neg": 16
+    },
+    "qpon": {
+      "lift": 5.3,
+      "score": 6,
+      "mal": 59,
+      "neg": 3
+    },
+    "store": {
+      "lift": 5.1,
+      "score": 6,
+      "mal": 1047,
+      "neg": 56
+    },
+    "bond": {
+      "lift": 5.0,
+      "score": 6,
+      "mal": 93,
+      "neg": 5
+    }
+  }
+}

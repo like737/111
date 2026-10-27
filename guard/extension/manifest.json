@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "eyilianjie 拦截守卫",
+  "version": "1.0.4",
+  "description": "打开链接前先问本地 eyilianjie guard：命中恶意链接就在页面上拦截。HTTPS 站点也能显示自定义拦截页（不需要安装证书）。",
+  "permissions": ["webNavigation", "tabs", "storage"],
+  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "eyilianjie 拦截守卫",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/shield.png",
+      "48": "icons/shield.png",
+      "128": "icons/shield.png"
+    }
+  },
+  "icons": {
+    "16": "icons/shield.png",
+    "48": "icons/shield.png",
+    "128": "icons/shield.png"
+  }
+}

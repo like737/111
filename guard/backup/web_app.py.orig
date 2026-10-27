@@ -1,0 +1,569 @@
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from html import escape as html_escape   # 拼接HTML时对URL/详情文本转义(防XSS与属性注入)
+import os
+import sys
+from datetime import datetime
+
+# 控制台编码兜底: 启动横幅里有 emoji, 当输出被重定向到文件、或控制台是 GBK(默认 cp936)时,
+# 直接 print 会抛 UnicodeEncodeError 导致服务起不来。这里统一改成 UTF-8 并容错。
+try:
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
+# 添加项目根目录到路径
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from config import Config
+from detector import Detector
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'malicious-url-detection-2024'
+
+# 初始化核心模块
+config = Config()
+detector = Detector(config)
+
+# 配色方案
+def render_icon(name: str, size: int = 16, alt: str = "") -> str:
+    """生成二次元风格图标 <img> 标签(替代界面里的 emoji)
+
+    图标文件位于 static/icons/*.png(256×256 透明背景), 由 Flask 的静态
+    目录提供; 在没有请求上下文时(极少见)退化为 /static/ 相对路径。
+    尺寸类 icon-14/16/18/24 定义在 base.html 的 <style> 中。
+    """
+    filename = "icons/{}.png".format(name)
+    try:
+        src = url_for('static', filename=filename)
+    except RuntimeError:
+        src = "/static/" + filename
+    return '<img src="{}" class="icon-{}" alt="{}">'.format(src, size, alt)
+
+def get_risk_class(score):
+    """根据评分(0-100)确定风险等级，越低越危险"""
+    if score == 0:
+        return 'dark', 'dark', '黑名单'
+    elif score <= 69:
+        return 'danger', 'danger', '危险'
+    elif score <= 99:
+        return 'success', 'success', '安全'
+    else:  # score == 100
+        return 'primary', 'primary', '白名单'
+
+def get_risk_badge(result):
+    """获取风险等级横条进度条HTML，支持对象或字典"""
+    if isinstance(result, dict):
+        score = result.get('score', 0)
+    else:
+        score = result.score
+    
+    if score == 0:
+        color = 'dark'
+        label = '黑名单'
+    elif score <= 69:
+        color = 'danger'
+        label = '危险'
+    elif score <= 99:
+        color = 'success'
+        label = '安全'
+    else:
+        color = 'primary'
+        label = '白名单'
+    
+    return f'''
+    <div class="d-flex flex-wrap align-items-center gap-2 w-100">
+        <div class="progress flex-grow-1" style="height: 22px; min-width: 0; overflow: hidden;">
+            <div class="progress-bar bg-{color}" 
+                 role="progressbar" 
+                 style="width: {'100%' if score >= 100 else score}%; min-width: fit-content;"
+                 aria-valuenow="{score}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+            </div>
+        </div>
+        <small class="text-{color} fw-bold text-nowrap">{label} {score}</small>
+    </div>'''
+
+@app.template_filter('format_time')
+def format_time(value, fmt='%Y-%m-%d %H:%M:%S'):
+    """把检测时间格式化为可读形式
+
+    detection_log.json 中保存的是 datetime.now().isoformat()，
+    例如 "2026-09-15T08:29:53.981409"。模板里直接切片只能得到
+    "09-15T08:2" 这种带 T 的片段，因此统一在这里转换；
+    解析失败时原样返回前 19 位，保证页面不会因为脏数据报错。
+    """
+    if not value:
+        return ''
+    try:
+        return datetime.strptime(str(value)[:19], '%Y-%m-%dT%H:%M:%S').strftime(fmt)
+    except ValueError:
+        return str(value)[:19]
+
+@app.route('/')
+def index():
+    """首页 - URL检测"""
+    stats = detector.reporter.get_statistics()
+    recent = detector.reporter.get_recent_detections(5)
+    # 首页"是否启用AI辅助检测"选项的默认状态:
+    # 需要同时满足"已配置DeepSeek密钥" 且 "设置页未关闭AI辅助检测"
+    ai_available = (bool(str(config.get('api_keys', 'deepseek') or '').strip())
+                    and bool(config.get('detection', 'enable_api_check')))
+    return render_template('index.html', stats=stats, recent=recent,
+                           get_risk_class=get_risk_class, get_risk_badge=get_risk_badge,
+                           ai_available=ai_available)
+
+@app.route('/detect', methods=['POST'])
+def detect():
+    """执行URL检测"""
+    url = request.form.get('url', '').strip()
+    
+    if not url:
+        return jsonify({'error': 'URL不能为空'})
+    
+    # 首页的"是否启用AI辅助检测"选项: 未提交该字段时沿用原行为(启用),
+    # detector 内部还会再校验设置页的全局开关 enable_api_check
+    use_api_raw = request.form.get('use_api')
+    use_api = True if use_api_raw is None else use_api_raw.strip().lower() in ('1', 'true', 'on', 'yes')
+    
+    result = detector.detect(url, use_api=use_api)
+    return jsonify({
+        'success': True,
+        'result': result.to_dict(),
+        'html': get_result_html(result)
+    })
+
+def get_result_html(result):
+    """生成结果HTML
+
+    链接拦截(本次新增): 结果里的URL渲染成"受守卫链接"——
+    命中黑名单或判定为恶意时, 点击只弹出拦截提示、不会跳转;
+    安全链接点击后在新标签页打开。
+    另外所有插入HTML的URL/域名/详情文本都做了转义(原实现是直接拼接,
+    URL中含有引号或标签时会破坏页面甚至造成XSS)。
+    """
+    score = result.score
+    is_malicious = result.is_malicious
+
+    # ---- 展示层修正: "ML 单独定罪"造成的 分数/结论 冲突 ----
+    #   背景: ml_mode=enforce 且 ml_trigger_intercept=true 时, ML 高置信项会被直接置 is_malicious=True;
+    #   但按约定 ML 不参与打分(ml_affect_score=false), 于是分数可能仍留在"安全"档(>=70),
+    #   出现"评分 97 + 绿色进度条 + 结论却是恶意链接"的观感矛盾。
+    #   处理(**只影响展示, 绝不改 result.score / 日志字段 / 判定结果**):
+    #     1) 展示分数夹到"可疑"档 60-69(单调映射: 70→60, 99→69);
+    #     2) 卡片改用警示配色, 并在 ML 区块标注"该判定来自 ML 通道（分数体系未参与打分）"。
+    ml_only_conviction = bool(is_malicious
+                              and not result.blacklist_match
+                              and getattr(result, 'ml_mode', None) == 'enforce'
+                              and getattr(result, 'ml_high', False)
+                              and score >= 70)
+    display_score = score
+    if ml_only_conviction:
+        display_score = max(60, min(69, 60 + int(round((min(99, score) - 70) / 29.0 * 9))))
+
+    risk_class, bg_class, risk_text = get_risk_class(display_score)
+    header_text_class = 'text-white'
+    level_span_class = 'text-' + risk_class
+    if ml_only_conviction:
+        # 警示配色(黄) + "可疑"文案: 既区别于"危险(红)", 也区别于"安全(绿)"
+        risk_class = bg_class = 'warning'
+        risk_text = '可疑'
+        header_text_class = 'text-dark'
+        level_span_class = 'text-warning-emphasis'
+
+    # 拦截判定: 命中黑名单 或 被判定为恶意链接
+    blocked = bool(is_malicious or result.blacklist_match)
+    block_reason = ("命中黑名单记录" if result.blacklist_match
+                    else ("ML 通道高置信判定为恶意（分数体系未参与打分）" if ml_only_conviction
+                          else "启发式/AI分析判定为恶意链接（评分 {}/100）".format(display_score)))
+    url_attr = html_escape(result.url, quote=True)        # 放进 data-url 属性
+    url_text = html_escape(result.url)                    # 页面显示文本
+    reason_attr = html_escape(block_reason, quote=True)
+    domain_text = html_escape(str(result.domain or "未知"))
+    link_class = "text-danger text-decoration-line-through fw-bold" if blocked else "link-primary"
+    guard_attrs = ('data-url="{url}" data-blocked="{blocked}" data-reason="{reason}" '
+                   'onclick="return guardedOpen(this)"'.format(
+                       url=url_attr, blocked="1" if blocked else "0", reason=reason_attr))
+    blocked_badge = ('<span class="badge bg-danger ms-1">{} 已拦截</span>'.format(
+                        render_icon('shield', 14, '拦截')) if blocked
+                     else '<span class="badge bg-success ms-1">{} 可安全访问</span>'.format(
+                        render_icon('check', 14, '安全')))
+    # URL 下方一行提示: 只说明"点击会发生什么", 避免与卡片底部的结论重复
+    blocked_hint = ('<div class="alert alert-danger mt-2 mb-0 py-2">'
+                    '<small>{} 点击不会跳转（已自动拦截，原因：{}）</small></div>'.format(
+                        render_icon('shield', 16, '拦截'), html_escape(block_reason)) if blocked else
+                    '<div class="alert alert-success mt-2 mb-0 py-2">'
+                    '<small>{} 点击可在新标签页打开该链接</small></div>'.format(
+                        render_icon('check', 16, '安全')))
+    # DeepSeek 是否参与本次分析(用于"AI分析"那一行的标记图标)
+    deepseek_used = any('DeepSeek' in str(d) for d in result.details)
+    ai_mark = render_icon('check', 14, '已启用') if deepseek_used else ''
+    
+    # 进度条宽度计算
+    # 1) 原代码写的是 f"{score}%%"，拼出 "width: 99%%" 这种无效CSS，
+    #    浏览器会忽略该声明，导致绿条退化成"文字宽度"、右侧留出大片灰色空余；
+    #    (f-string 中单个 % 就是合法字符，%% 只在 % 格式化操作中才需要)
+    # 2) "安全/白名单"等级(>=70分)直接铺满整条，不再留灰色空余。
+    bar_width = 100 if display_score >= 70 else display_score
+    bar_style = f"width: {bar_width}%; min-width: fit-content;"
+    # ---- ML 检测通道展示(方案A: 域名模型 + 路径模型 分别展示) ----
+    # 只追加一块信息, 不改变既有颜色/分级/拦截逻辑;
+    # 模型未启用或不可用时 ml_block_html 为空, 页面与接入前完全一致。
+    # (用字符串拼接而非 %/.format, 避免模板里的 % 或 {} 被误解析)
+    ml_block_html = ''
+    if getattr(result, 'ml_prob', None) is not None:
+        _ml_bad = bool(getattr(result, 'ml_verdict', 0))
+        _ml_badge = ('<span class="badge bg-danger">模型: 恶意</span>' if _ml_bad
+                     else '<span class="badge bg-success">模型: 正常</span>')
+        _ml_mode_txt = ('判定参与(enforce)' if getattr(result, 'ml_mode', '') == 'enforce'
+                        else '仅记录(shadow)')
+        _ml_high_txt = '是' if getattr(result, 'ml_high', False) else '否'
+        # 各通道独立展示(域名模型 / 路径模型)
+        _rows = ''
+        for _name, _label in (('domain', '域名模型'), ('path', '路径模型')):
+            _p = getattr(result, 'ml_' + _name + '_prob', None)
+            if _p is None:
+                continue
+            _is_bad = float(_p) >= ((getattr(result, 'ml_thresholds', {}) or {}).get(_name) or 0.5)
+            _rows += ('<li><strong>' + _label + ':</strong> ' + ('%.4f' % float(_p)) + '　'
+                      + ('<span class="badge bg-danger">恶意</span>' if _is_bad
+                         else '<span class="badge bg-success">正常</span>') + '</li>')
+        _convict_txt = ('、'.join(getattr(result, 'ml_convict', []) or [])
+                        or ('、'.join(getattr(result, 'ml_hint', []) or []) + '（仅提示）' if getattr(result, 'ml_hint', None) else '—'))
+        ml_block_html = (
+            '<div class="row mt-3"><div class="col-12">'
+            '<h6>' + render_icon('shield', 16, 'ML') + ' ML模型判定 (MaliciousURLs)</h6>'
+            '<ul class="list-unstyled mb-0">'
+            + _rows +
+            '<li><strong>综合概率:</strong> ' + ('%.4f' % float(result.ml_prob)) + '　' + _ml_badge + '</li>'
+            '<li><strong>高置信:</strong> ' + _ml_high_txt + '　<strong>模式:</strong> ' + _ml_mode_txt
+            + '　<strong>参与拦截的通道:</strong> ' + _convict_txt + '</li>'
+            '</ul></div></div>')
+        # 说明标注: 让用户知道这条结论来自哪一路信号, 避免"分数/结论"观感矛盾
+        if _ml_bad and getattr(result, 'ml_high', False):
+            if ml_only_conviction:
+                ml_block_html += ('<div class="alert alert-warning py-2 mt-2 mb-0">'
+                                  '<small>⚠ <strong>该判定来自 ML 通道（分数体系未参与打分）</strong>：'
+                                  '模型高置信判恶意，已参与拦截；上方风险评分已按"可疑"档展示。'
+                                  '</small></div>')
+            elif not blocked:
+                ml_block_html += ('<div class="alert alert-warning py-2 mt-2 mb-0">'
+                                  '<small>⚠ 模型高置信判定为恶意，但当前配置不参与拦截（仅提示）；'
+                                  '建议人工复核后再访问。</small></div>')
+
+
+    html = f'''
+    <div class="card border-{risk_class} mb-4">
+        <div class="card-header bg-{bg_class} {header_text_class}">
+            <h5 class="mb-0">
+                {"🔴 检测结果 - 恶意链接" if is_malicious else "🟢 检测结果 - 安全链接"}
+            </h5>
+        </div>
+        <div class="card-body">
+            <h6 class="card-title">{render_icon('link', 16, '链接')} 检测URL</h6>
+            <p class="text-break">
+                <a href="javascript:void(0)" class="{link_class}" {guard_attrs}>{url_text}</a>
+                {blocked_badge}
+            </p>
+            {blocked_hint}
+            
+            <!-- 全宽度风险评分大横条 -->
+            <div class="mb-4">
+                <h6 class="mb-2">{render_icon('chart', 18, '评分')} 风险评分</h6>
+                <div class="progress" style="height: 36px; border-radius: 18px; font-size: 16px; font-weight: bold; overflow: hidden;">
+                    <div class="progress-bar bg-{risk_class} d-flex align-items-center justify-content-center" 
+                         role="progressbar" 
+                         style="{bar_style}" 
+                         aria-valuenow="{display_score}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        {risk_text} · {display_score}/100
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>ℹ️ 基本信息</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>域名:</strong> {domain_text}</li>
+                        <li><strong>风险等级:</strong> <span class="{level_span_class} fw-bold">{result.risk_level}</span></li>
+                        <li><strong>是否命中黑名单:</strong> {"是" if result.blacklist_match else "否"}</li>
+                        <li><strong>时间:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>🤖 AI分析</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>DeepSeek增强:</strong> {"已启用 " + ai_mark if deepseek_used else "未启用"}</li>
+                        <li><strong>检测方式:</strong> 启发式分析 + AI大模型</li>
+                    </ul>
+                </div>
+            </div>
+            {ml_block_html}
+
+            
+            {get_details_html(result.details)}
+    '''
+    
+    if is_malicious:
+        html += f'''
+            <div class="alert alert-danger mt-3" role="alert">
+                <strong>{render_icon('shield', 18, '警告')} 警告! 这很可能是一个恶意链接，点击将被自动拦截！</strong><br>
+                <small>拦截原因：{html_escape(block_reason)}。它可能是钓鱼网站、诈骗网站或包含恶意软件。</small><br>
+                <small>点击上方 URL 只会显示拦截提示、不会跳转；确需访问时需在提示中二次确认（不推荐）。</small>
+            </div>
+        '''
+
+    else:
+        html += f'''
+            <div class="alert alert-success mt-3" role="alert">
+                <strong>{render_icon('check', 18, '安全')} 安全!</strong> 该链接未检测出明显的恶意特征，但仍建议你保持警惕。
+            </div>
+        '''
+    
+    html += '''
+        </div>
+    </div>
+    '''
+    
+    return html
+
+def get_details_html(details):
+    """生成详情HTML"""
+    if not details:
+        return '<p class="mt-3">未发现异常特征。</p>'
+    
+    html = '''
+    <div class="mt-4">
+        <h6>{icon} 检测详情</h6>
+        <ul class="list-group mt-2">
+    '''.format(icon=render_icon('search', 18, '详情'))
+    
+    # 按内容自动上色, 并把行首的 ✅ / ⚠ 换成二次元风格图标
+    # (ℹ、⛔、🤖 暂无对应图标, 保留原符号):
+    # 1) 先判断 ✅ —— 有些"通过"文案里也会出现"风险"二字
+    #    (例如"✅ 顶级域名 .com 不在高风险域名名单中"), 不能据此判成警告;
+    # 2) 图标是代码自己插入的 <img>, 因此只对剩余文本做 HTML 转义。
+    for detail in details:
+        raw = str(detail)
+        if raw.startswith('✅'):
+            cls = 'list-group-item-success'
+            safe = render_icon('check', 14, '通过') + ' ' + html_escape(raw[1:].lstrip())
+        elif raw.startswith('⚠'):
+            cls = 'list-group-item-warning'
+            rest = raw[1:]
+            if rest.startswith('\ufe0f'):     # 去掉 emoji 变体选择符
+                rest = rest[1:]
+            safe = render_icon('warning', 14, '提示') + ' ' + html_escape(rest.lstrip())
+        else:
+            cls = ('list-group-item-warning' if ('⛔' in raw or '⚠' in raw or '风险' in raw)
+                   else 'list-group-item-info')
+            safe = html_escape(raw)
+        html += '<li class="list-group-item {0}">{1}</li>'.format(cls, safe)
+    
+    html += '''
+        </ul>
+    </div>
+    '''
+    
+    return html
+
+@app.route('/report')
+def report():
+    """检测报告页面"""
+    stats = detector.reporter.get_statistics()
+    recent = detector.reporter.get_recent_detections(20)
+    return render_template('report.html', stats=stats, recent=recent, 
+                          get_risk_class=get_risk_class, get_risk_badge=get_risk_badge)
+
+@app.route('/blacklist')
+def blacklist():
+    """黑名单管理页面
+
+    列表规则: 用户手动添加的条目置顶显示(最新在最前), 其余维持原有顺序;
+    模板用 user_added 给这些条目打上"📌 手动添加"标记。
+    """
+    blacklist = detector.get_blacklist(1000)
+    return render_template('blacklist.html', blacklist=blacklist,
+                           count=detector.get_blacklist_count(),
+                           user_added=detector.get_user_added_urls())
+
+@app.route('/blacklist/add', methods=['POST'])
+def blacklist_add():
+    """手动添加黑名单(新规则: 置顶 + 与黑名单原有条目比较后给出提示)"""
+    url = request.form.get('url', '').strip()
+    if not url:
+        flash('请输入要添加的URL', 'warning')
+        return redirect(url_for('blacklist'))
+
+    result = detector.add_to_blacklist(url)
+
+    if result.get("duplicate"):
+        dup = result["duplicate"]
+        flash('该链接已在黑名单中（匹配方式：{}，条目：{}），已将它置顶显示，未重复写入。'.format(
+            dup["level"], dup["entry"][:120]), 'info')
+    else:
+        flash('✅ 已添加到黑名单并置顶：{}'.format(result["entry"][:120]), 'success')
+
+    same_host = result.get("same_host_count") or 0
+    if same_host:
+        flash('⚠ 同一域名下已收录 {} 条记录，请确认是否为重复录入。'.format(same_host), 'warning')
+    similar = result.get("similar") or []
+    if similar:
+        lines = "；".join('{}（{}）'.format(item["entry"][:90], item["reason"]) for item in similar[:3])
+        flash('🔍 与已有条目相似（共 {} 条）：{}'.format(len(similar), lines), 'secondary')
+
+    return redirect(url_for('blacklist'))
+
+@app.route('/blacklist/import_feed', methods=['POST'])
+def blacklist_import_feed():
+    """从公开源导入黑名单"""
+    results = detector.import_from_public_feeds()
+    total = sum(v for v in results.values() if v > 0)
+    return jsonify({'success': True, 'total': total, 'details': results})
+
+@app.route('/blacklist/import_seed', methods=['POST'])
+def blacklist_import_seed():
+    """导入种子黑名单"""
+    count = detector.import_seed_blacklist()
+    return jsonify({'success': True, 'count': count})
+
+@app.route('/blacklist/import_file', methods=['POST'])
+def blacklist_import_file():
+    """从上传的文件导入黑名单"""
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'count': 0})
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'success': False, 'count': 0})
+    
+    content = file.read().decode('utf-8', errors='ignore')
+    urls = [line.strip() for line in content.split('\n') if line.strip() and not line.startswith('#')]
+    count = detector.import_blacklist_from_urls(urls)
+    return jsonify({'success': True, 'count': count})
+
+@app.route('/blacklist/remove', methods=['POST'])
+def blacklist_remove():
+    """从黑名单移除"""
+    url = request.form.get('url', '').strip()
+    if url:
+        detector.remove_from_blacklist(url)
+    return redirect(url_for('blacklist'))
+
+# ========== 黑名单查询 / 一键移除(新增, 纯 AJAX 接口, 不影响既有页面与逻辑) ==========
+@app.route('/blacklist/lookup')
+def blacklist_lookup():
+    """查询某个链接是否在黑名单中
+
+    复用 detector.lookup_blacklist() 的多级匹配(精确/规范化/忽略协议/忽略查询参数/父路径/域名),
+    并附带"同域名下的其它条目"; 只读, 不修改黑名单。
+    """
+    url = (request.args.get('url') or '').strip()
+    if not url:
+        return jsonify({'success': False, 'error': '请输入要查询的链接'})
+    info = detector.lookup_blacklist(url)
+    info['success'] = True
+    return jsonify(info)
+
+@app.route('/blacklist/remove_entry', methods=['POST'])
+def blacklist_remove_entry():
+    """按查询结果里的"条目原文"移除黑名单条目(AJAX)"""
+    entry = (request.form.get('entry') or '').strip()
+    res = detector.remove_blacklist_entry(entry)
+    res['success'] = bool(res.get('removed'))
+    if not res.get('success'):
+        res['error'] = res.get('reason') or '移除失败'
+    return jsonify(res)
+
+@app.route('/settings')
+def settings():
+    """设置页面
+
+    使用 config.public_config 渲染：DeepSeek 等敏感密钥在 Web 端只显示掩码，
+    不显示明文，页面上也不出现任何"如何配置密钥"的提示文案（相关说明仅写在代码注释里）。
+
+    DeepSeek 密钥仅支持在服务端配置（优先级从高到低）：
+      1. 环境变量 DEEPSEEK_API_KEY —— 优先级最高，密钥不落盘（推荐）
+      2. config.json 中的 api_keys.deepseek
+      3. 命令行运行 python main.py，进入「系统设置 → 9」输入
+    """
+    return render_template('settings.html', config=config.public_config)
+
+@app.route('/whitelist')
+def whitelist():
+    """白名单管理页面"""
+    whitelist = detector.get_whitelist(500)
+    return render_template('whitelist.html', whitelist=whitelist, count=detector.get_whitelist_count())
+
+@app.route('/whitelist/add', methods=['POST'])
+def whitelist_add():
+    """添加到白名单"""
+    url = request.form.get('url', '').strip()
+    if url:
+        detector.add_to_whitelist(url)
+    return redirect(url_for('whitelist'))
+
+@app.route('/whitelist/remove', methods=['POST'])
+def whitelist_remove():
+    """从白名单移除"""
+    url = request.form.get('url', '').strip()
+    if url:
+        detector.remove_from_whitelist(url)
+    return redirect(url_for('whitelist'))
+
+@app.route('/settings/update', methods=['POST'])
+def settings_update():
+    """更新设置"""
+    data = request.form.to_dict()
+    
+    # 更新检测设置
+    config.set('enable_heuristic' in data, 'detection', 'enable_heuristic')
+    config.set('enable_blacklist' in data, 'detection', 'enable_blacklist')
+    config.set('enable_dns_check' in data, 'detection', 'enable_dns_check')
+    config.set('enable_api_check' in data, 'detection', 'enable_api_check')
+    
+    try:
+        threshold = int(data.get('heuristic_threshold', '60'))
+        config.set(max(0, min(100, threshold)), 'detection', 'heuristic_threshold')
+    except:
+        pass
+    
+    try:
+        interval = float(data.get('check_interval', '1.0'))
+        config.set(max(0.5, interval), 'monitoring', 'check_interval')
+    except:
+        pass
+    
+    config.set('auto_intercept' in data, 'monitoring', 'auto_intercept')
+    config.set('enable_clipboard_monitor' in data, 'monitoring', 'enable_clipboard_monitor')
+    
+    # API keys
+    # 设置页已移除 Google Safe Browsing / VirusTotal 的输入框，密钥统一只在服务端维护
+    # （config.json 或 main.py 的命令行设置），因此忽略表单中的这些字段，
+    # 避免保存设置时把服务端已配置的密钥覆盖成空值。
+    for key in ('google_safe_browsing', 'virustotal'):
+        if key in data:
+            print(f"[Web] 已忽略来自Web端的 {key} 密钥修改请求（请在服务端配置）")
+
+    if 'deepseek' in data:
+        print("[Web] 已忽略来自Web端的 DeepSeek 密钥修改请求（请在服务端配置）")
+
+    return redirect(url_for('settings'))
+
+@app.route('/export/csv')
+def export_csv():
+    """导出CSV"""
+    detector.reporter.export_csv('detection_export.csv')
+    return redirect(url_for('report'))
+
+def run_web(host='0.0.0.0', port=5000, debug=True):
+    """启动Web服务器"""
+    print(f"🚀 Web服务器启动: http://127.0.0.1:{port}")
+    print(f"📊 系统信息: 黑名单 {len(detector._blacklist)} 条, 检测历史 {len(detector.reporter._logs)} 条")
+    app.run(host=host, port=port, debug=debug)
+
+if __name__ == '__main__':
+    run_web()

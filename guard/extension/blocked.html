@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>该链接已被拦截 · eyilianjie 拦截守卫</title>
+<style>
+    :root {
+        --bg1: #0b1020; --bg2: #171b33; --card: rgba(255,255,255,0.06);
+        --line: rgba(255,255,255,0.12); --text: #eef1f8; --muted: #a8b0c6;
+        --red: #ff4d6d; --amber: #ffb703; --green: #22c55e; --blue: #4d8bff;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; min-height: 100vh; color: var(--text);
+        font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+        background:
+            radial-gradient(1200px 600px at 15% -10%, rgba(77,139,255,0.25), transparent 60%),
+            radial-gradient(1000px 500px at 110% 10%, rgba(255,77,109,0.22), transparent 60%),
+            linear-gradient(160deg, var(--bg1), var(--bg2));
+        display: flex; align-items: center; justify-content: center; padding: 32px 16px;
+    }
+    .card {
+        width: 100%; max-width: 760px; background: var(--card); border: 1px solid var(--line);
+        border-radius: 20px; padding: 30px 32px; backdrop-filter: blur(12px);
+        box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    }
+    .head { display: flex; align-items: center; gap: 14px; }
+    .head img { width: 46px; height: 46px; }
+    h1 { font-size: 24px; margin: 0; letter-spacing: 0.5px; }
+    .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .target {
+        margin: 20px 0 14px; padding: 12px 14px; border-radius: 12px;
+        background: rgba(0,0,0,0.35); border: 1px solid var(--line);
+        font-family: Consolas, "Courier New", monospace; font-size: 13px;
+        word-break: break-all; color: #ffd7de;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .chip {
+        font-size: 12px; padding: 5px 11px; border-radius: 999px;
+        border: 1px solid var(--line); background: rgba(255,255,255,0.05); color: var(--text);
+    }
+    .chip.red { border-color: rgba(255,77,109,0.5); background: rgba(255,77,109,0.14); }
+    .chip.amber { border-color: rgba(255,183,3,0.5); background: rgba(255,183,3,0.14); }
+    .chip.blue { border-color: rgba(77,139,255,0.5); background: rgba(77,139,255,0.14); }
+    .chip b { font-weight: 600; }
+    .panel { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: rgba(0,0,0,0.18); }
+    .panel h2 { font-size: 14px; margin: 0 0 8px; color: var(--muted); font-weight: 600; }
+    .reason { font-size: 15px; margin-bottom: 10px; }
+    ul.details { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.9; }
+    ul.details li code { color: #ffe08a; }
+    .how { margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.8; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    button {
+        font: inherit; font-size: 14px; padding: 10px 16px; border-radius: 10px; cursor: pointer;
+        border: 1px solid var(--line); background: rgba(255,255,255,0.08); color: var(--text);
+        transition: transform .08s ease, background .15s ease;
+    }
+    button:hover { background: rgba(255,255,255,0.14); }
+    button:active { transform: translateY(1px); }
+    button.primary { background: linear-gradient(135deg, #ff4d6d, #d6336c); border-color: transparent; font-weight: 600; }
+    button.ghost { background: transparent; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .foot { margin-top: 20px; color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .toast {
+        position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+        background: rgba(20,24,40,0.95); border: 1px solid var(--line); color: var(--text);
+        padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none;
+        transition: opacity .2s ease;
+    }
+    .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+    <div class="card">
+        <div class="head">
+            <img src="icons/shield.png" alt="拦截">
+            <div>
+                <h1>该链接已被拦截</h1>
+                <div class="sub">由 eyilianjie 拦截守卫（浏览器扩展）在导航前拦下 —— HTTPS 站点同样生效</div>
+            </div>
+        </div>
+
+        <div class="target" id="target">（没有拿到目标地址）</div>
+        <div class="chips" id="chips"></div>
+
+        <div class="panel">
+            <h2>判定结论</h2>
+            <div class="reason" id="reason">—</div>
+            <ul class="details" id="details"></ul>
+            <div class="how" id="how"></div>
+        </div>
+
+        <div class="actions">
+            <button class="ghost" id="btnBack">← 返回上一页</button>
+            <button class="ghost" id="btnCopy">复制链接</button>
+            <button class="ghost" id="btnAllow">误报？加入放行名单</button>
+            <button class="primary" id="btnForce" disabled>仍然访问（10）</button>
+        </div>
+
+        <div class="foot">
+            <span id="footLeft">eyilianjie 拦截守卫 v1.0.4</span>
+            <span id="footRight"></span>
+        </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script src="blocked.js"></script>
+</body>
+</html>

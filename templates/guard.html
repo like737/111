@@ -1,0 +1,525 @@
+﻿{% extends "base.html" %}
+
+{% block title %}🛡 拦截控制台 - 恶意链接检测系统{% endblock %}
+
+{% block content %}
+{% set gp = guard_paths or {} %}
+{# ==========================================================================
+   拦截控制台（guard）
+   --------------------------------------------------------------------------
+   * 交互: 上面的勾选决定"用什么方式拦", 点【开始拦截】才会真正开始拦
+     （会同时把系统代理指向 guard, 立刻生效, 不需要重启服务）;
+   * 这里只调用 guard 的接口, 判定逻辑与数据都在 guard\ 目录里;
+   * 所有写操作都会带自定义请求头 + JSON 体（防跨站伪造）。
+   ========================================================================== #}
+
+<div id="guardAlertBox"></div>
+
+{# ---------- 状态总览 ---------- #}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h4 class="mb-0">
+            {{ icon('shield', 20, '拦截') }}
+            拦截控制台
+        </h4>
+        <div class="d-flex align-items-center gap-2">
+            <span id="guardStateBadge" class="badge bg-secondary">读取中…</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="guardLoad()">刷新状态</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="status-tile p-3 border rounded h-100">
+                    <div class="text-muted small">拦截总开关</div>
+                    <div id="guardEnabled" class="fs-5 fw-bold">--</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="status-tile p-3 border rounded h-100">
+                    <div class="text-muted small">系统代理（全浏览器生效）</div>
+                    <div id="guardProxy" class="fs-5 fw-bold">--</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="status-tile p-3 border rounded h-100">
+                    <div class="text-muted small">检测即真封</div>
+                    <div id="guardDetect" class="fs-5 fw-bold">--</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="status-tile p-3 border rounded h-100">
+                    <div class="text-muted small">已拦截次数</div>
+                    <div id="guardBlocked" class="fs-5 fw-bold">--</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <button type="button" class="btn btn-danger btn-lg" onclick="guardStart()">
+                {{ icon('shield', 20, '开始') }} 开始拦截
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-lg" onclick="guardStop()">停止拦截</button>
+            <button type="button" class="btn btn-outline-primary btn-lg" onclick="guardProxyToggle()">
+                系统代理：开 / 关
+            </button>
+        </div>
+        <div class="form-text mt-2">
+            点【开始拦截】= 按下面勾选的「拦截方式」立即生效，并自动把系统代理指向 guard；
+            点【停止拦截】= 立刻放行一切，并把系统代理还原成你原来的设置（不影响其它程序）。
+        </div>
+        <div id="guardHint" class="alert alert-secondary mt-3 mb-0 py-2 small d-none"></div>
+    </div>
+</div>
+
+{# ---------- 拦截方式 ---------- #}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">🧩 拦截方式（勾选后点【应用勾选】或【开始拦截】）</h4>
+        <button type="button" class="btn btn-sm btn-primary" onclick="guardApplyModes()">应用勾选</button>
+    </div>
+    <div class="card-body">
+        <div id="guardModes" class="row g-3">
+            <div class="col-12 text-muted">正在读取…</div>
+        </div>
+    </div>
+</div>
+
+{# ---------- 最近拦截 / 放行记录 ---------- #}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+            {{ icon('chart', 20, '记录') }} 最近的拦截 / 放行记录
+        </h4>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="guardLoad()">刷新</button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th style="width:170px">时间</th><th style="width:90px">动作</th><th>目标</th>
+                        <th>原因</th><th style="width:120px">来源</th></tr>
+                </thead>
+                <tbody id="guardLogs">
+                    <tr><td colspan="5" class="text-muted">正在读取…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# ---------- 名单管理 + 手测 ---------- #}
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><h4 class="mb-0">📌 手动拦截 / 放行</h4></div>
+            <div class="card-body">
+                <div class="input-group mb-2">
+                    <input type="text" id="guardBlockInput" class="form-control"
+                           placeholder="要拦截的 URL 或域名（域名=整站拦截）" autocomplete="off">
+                    <button class="btn btn-danger" type="button" onclick="guardEntry('block')">加入拦截</button>
+                </div>
+                <div class="input-group mb-3">
+                    <input type="text" id="guardAllowInput" class="form-control"
+                           placeholder="要放行 / 要撤销放行的 URL 或域名" autocomplete="off">
+                    <button class="btn btn-success" type="button" onclick="guardEntry('allow')">加入放行</button>
+                    <button class="btn btn-outline-success" type="button"
+                            onclick="guardEntry('remove_allow')">移除放行</button>
+                </div>
+                <button class="btn btn-sm btn-outline-danger" type="button" onclick="guardEntry('clear_dynamic')">
+                    清空动态拦截集
+                </button>
+                <div class="form-text mt-2">
+                    放行名单优先于一切拦截规则；放行某个域名时，只放行它本身，不会连带放行整个注册域名。
+                </div>
+                <div class="mt-3">
+                    <div class="fw-semibold small">当前放行名单（这些地址会绕开一切拦截）</div>
+                    <div id="guardAllowList" class="small mt-1">读取中…</div>
+                </div>
+                <div class="mt-3">
+                    <div class="fw-semibold small">当前动态拦截集（这些地址会被拦，含手动加入的）</div>
+                    <div id="guardDynamicList" class="small mt-1">读取中…</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><h4 class="mb-0">🔍 手测一个 URL</h4></div>
+            <div class="card-body">
+                <div class="input-group mb-2">
+                    <input type="text" id="guardCheckInput" class="form-control"
+                           placeholder="例如: http://example.com/login" autocomplete="off">
+                    <select id="guardCheckMode" class="form-select" style="max-width:150px">
+                        <option value="url">按完整 URL</option>
+                        <option value="host">只按域名（模拟 HTTPS）</option>
+                    </select>
+                    <button class="btn btn-primary" type="button" onclick="guardCheck()">判定</button>
+                </div>
+                <div id="guardCheckResult" class="small"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ---------- 说明 ---------- #}
+<div class="card mt-4 mb-3">
+    <div class="card-header"><h4 class="mb-0">📖 使用说明 / 已知限制</h4></div>
+    <div class="card-body small">
+        <ol class="mb-2">
+            <li><b>只勾选 + 点【开始拦截】即可</b>：不需要去别的控制台、不需要重启服务，改完立刻生效
+                （guard 每次判定都重新读配置）。</li>
+            <li><b>HTTPS 的显示效果</b>：走代理时 HTTPS 命中只能显示浏览器自己的错误页
+                （<code>ERR_TUNNEL_CONNECTION_FAILED</code>），这是不装根证书的物理限制；
+                想连 HTTPS 也看到漂亮拦截页，请在浏览器里装 guard 的油猴脚本
+                （<code>guard\userscript\eyilianjie_guard.user.js</code>）。</li>
+            <li><b>点【停止拦截】会还原你的代理设置</b>：guard 开启前会记录原值（例如你自己的
+                <code>127.0.0.1:10808</code>），停止时逐项还原，不会顶掉你的科学上网工具。</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ==========================================================================
+   拦截控制台前端逻辑
+   - 写操作统一带自定义头 X-Guard-Request + JSON 体（服务端据此拒绝跨站伪造）;
+   - 点【开始拦截】= enabled=true + 当前勾选 → 服务端立刻写配置 / 清判定缓存 /
+     把系统代理指向 guard，**不需要重启服务**;
+   - 状态每 10 秒轮询一次; 每次操作后立即局部刷新（不整页刷新）。
+   ========================================================================== */
+var GUARD_HDR = 'X-Guard-Request';
+var guardState = null;
+
+function guardEsc(v) {
+    return String(v === undefined || v === null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function guardNotice(kind, html) {
+    document.getElementById('guardAlertBox').innerHTML =
+        '<div class="alert alert-' + kind + ' alert-dismissible fade show py-2">' + html +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button></div>';
+}
+
+function guardApi(path, body) {
+    var opts = { headers: {} };
+    opts.headers[GUARD_HDR] = '1';
+    if (body !== undefined) {
+        opts.method = 'POST';
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(body || {});
+    }
+    return fetch(path, opts).then(function (r) {
+        return r.json().catch(function () { return { ok: false, reason: 'HTTP ' + r.status }; });
+    });
+}
+
+function guardLoad() {
+    return guardApi('/guard/state?logs=20').then(function (s) {
+        if (s.available === false) {
+            guardNotice('danger', '拦截层不可用：' + guardEsc(s.error || '找不到 guard 模块') +
+                '<br>请确认 <code>guard\\</code> 目录存在（判定与拦截能力都由它提供）。');
+        }
+        guardState = s;
+        guardRender(s);
+        return s;
+    }).catch(function (e) {
+        guardNotice('warning', '读取拦截状态失败: ' + guardEsc(e));
+    });
+}
+
+function guardCollect() {
+    var out = {};
+    document.querySelectorAll('.guard-mode').forEach(function (el) { out[el.value] = el.checked; });
+    return out;
+}
+
+function guardApply(enabled) {
+    var payload = guardCollect();
+    payload.enabled = !!enabled;
+    return guardApi('/guard/apply', payload).then(function (j) {
+        if (j.state) { guardState = j.state; guardRender(j.state); }
+        guardNotice(j.ok ? 'success' : 'warning', guardEsc(j.message || j.reason || ''));
+        return j;
+    });
+}
+
+function guardStart() { guardApply(true).then(guardLoad); }
+function guardStop() { guardApply(false).then(guardLoad); }
+function guardApplyModes() { guardApply(!!(guardState && guardState.enabled)).then(guardLoad); }
+
+function guardProxyToggle() {
+    var sp = (guardState && guardState.sysproxy) || {};
+    var on = !sp.active;
+    if (!confirm(on ? '把系统代理指向 guard（127.0.0.1:8888）？' : '把系统代理还原成原来的设置？')) { return; }
+    guardApi('/guard/sysproxy', { enable: on }).then(function (j) {
+        if (j.state) { guardState = j.state; guardRender(j.state); }
+        guardNotice(j.ok ? 'success' : 'warning', guardEsc(j.message || j.reason || ''));
+    });
+}
+
+function guardEntry(action) {
+    var url = '';
+    if (action === 'block') { url = document.getElementById('guardBlockInput').value.trim(); }
+    else if (action === 'allow' || action === 'remove_allow') {
+        url = document.getElementById('guardAllowInput').value.trim();
+    }
+    if (action === 'clear_dynamic' &&
+        !confirm('清空动态拦截集？（eyilianjie 检测日志里已有的恶意记录会在下次扫描时再次导入）')) { return; }
+    guardApi('/guard/entry', { action: action, url: url }).then(function (j) {
+        if (j.state) { guardState = j.state; guardRender(j.state); }
+        guardNotice(j.ok ? 'success' : 'warning', guardEsc(j.message || j.reason || ''));
+        if (j.ok) {
+            if (action === 'block') { document.getElementById('guardBlockInput').value = ''; }
+            if (action === 'allow' || action === 'remove_allow') {
+                document.getElementById('guardAllowInput').value = '';
+            }
+            guardLoad();
+            if (action === 'block' && url) { guardVerify(url); }   // 立刻回显服务端判定
+        }
+    });
+}
+
+/* 渲染动态拦截集（以前只有 8899 控制台能看到它 —— 加完拦截看不到条目, 容易以为没生效） */
+function guardRenderDynamic(s) {
+    var box = document.getElementById('guardDynamicList');
+    if (!box) { return; }
+    var data = s.dynamic || {};
+    var rows = data.entries || [];
+    if (!rows.length) {
+        box.innerHTML = '<span class="text-muted">（空：还没有拦截条目）</span>';
+        return;
+    }
+    var sourceLabel = { manual: '手动拦截', eyilianjie: '检测联动', blockpage: '拦截页回写' };
+    box.innerHTML = rows.map(function (r) {
+        var src = sourceLabel[r.source] || r.source || '';
+        return '<div class="d-flex align-items-center gap-2 mb-1">' +
+            '<span class="badge bg-secondary">' + guardEsc(r.level) + '</span>' +
+            '<code class="text-break">' + guardEsc(r.value) + '</code>' +
+            (src ? '<span class="text-muted small">' + guardEsc(src) + '</span>' : '') +
+            '<button class="btn btn-sm btn-outline-danger py-0" type="button" data-value="' +
+            guardEsc(r.value) + '" onclick="guardRemoveDynamic(this.getAttribute(\'data-value\'))">移除</button>' +
+            '</div>';
+    }).join('') + (data.count > rows.length
+        ? '<div class="text-muted">（只显示最近 ' + rows.length + ' 条，共 ' + data.count + ' 条）</div>' : '');
+}
+
+function guardRemoveDynamic(value) {
+    guardApi('/guard/entry', { action: 'remove', url: value }).then(function (j) {
+        if (j.state) { guardState = j.state; guardRender(j.state); }
+        guardNotice(j.ok ? 'success' : 'warning', guardEsc(j.message || j.reason || ''));
+        guardLoad();
+    });
+}
+
+/* 加完拦截后立刻回显"服务端判定结果" —— 一眼确认真的生效, 不用再去别处再输一遍 */
+function guardVerify(url) {
+    guardApi('/guard/check?url=' + encodeURIComponent(url) + '&mode=url&start=1')
+        .then(function (j) {
+            if (!j || !j.ok) { return; }
+            var d = j.decision || {};
+            guardNotice(d.blocked ? 'success' : 'warning',
+                '已加入拦截：<code>' + guardEsc(url) + '</code><br>服务端判定：<b>' +
+                (d.blocked ? '会被拦截 ✓' : '会放行') + '</b>（来源 <code>' + guardEsc(d.source) +
+                '</code>）' + (d.blocked ? '' : ' —— ' + guardEsc(d.reason || '')));
+        });
+}
+
+/* 点放行名单里某条的「移除」: 直接按该条目撤销 */
+function guardRemoveAllow(value) {
+    guardApi('/guard/entry', { action: 'remove_allow', url: value }).then(function (j) {
+        if (j.state) { guardState = j.state; guardRender(j.state); }
+        guardNotice(j.ok ? 'success' : 'warning', guardEsc(j.message || j.reason || ''));
+        guardLoad();
+    });
+}
+
+/* 渲染放行名单（以前页面上完全看不到它 —— 这是"加了拦截却拦不住"的头号原因） */
+function guardRenderAllow(s) {
+    var box = document.getElementById('guardAllowList');
+    if (!box) { return; }
+    var allow = s.allow || {};
+    var rows = [];
+    (allow.hosts || []).forEach(function (h) { rows.push({ value: h, kind: '域名' }); });
+    (allow.urls || []).forEach(function (u) { rows.push({ value: u, kind: 'URL' }); });
+    if (!rows.length) {
+        box.innerHTML = '<span class="text-muted">（空：没有任何放行条目）</span>';
+        return;
+    }
+    box.innerHTML = rows.map(function (r) {
+        return '<div class="d-flex align-items-center gap-2 mb-1">' +
+            '<span class="badge bg-secondary">' + r.kind + '</span>' +
+            '<code class="text-break">' + guardEsc(r.value) + '</code>' +
+            '<button class="btn btn-sm btn-outline-danger py-0" type="button" data-value="' +
+            guardEsc(r.value) + '" onclick="guardRemoveAllow(this.getAttribute(\'data-value\'))">移除</button>' +
+            '</div>';
+    }).join('');
+}
+
+function guardCheck() {
+    var url = document.getElementById('guardCheckInput').value.trim();
+    var mode = document.getElementById('guardCheckMode').value;
+    var box = document.getElementById('guardCheckResult');
+    if (!url) { box.innerHTML = '<span class="text-warning">请输入 URL</span>'; return; }
+    box.innerHTML = '<span class="text-muted">判定中…</span>';
+    guardApi('/guard/check?url=' + encodeURIComponent(url) + '&mode=' + mode + '&start=1')
+        .then(function (j) {
+            if (!j.ok) {
+                box.innerHTML = '<span class="text-warning">' + guardEsc(j.reason || '判定失败') + '</span>';
+                return;
+            }
+            var d = j.decision || {};
+            box.innerHTML = '<div class="alert alert-' + (d.blocked ? 'danger' : 'success') +
+                ' py-2 mb-0">' +
+                '<b>' + (d.blocked ? '会被拦截' : '会放行') + '</b>　来源: <code>' + guardEsc(d.source) + '</code>' +
+                '<div class="mt-1">' + guardEsc(d.reason || '') + '</div>' +
+                (d.entry ? '<div class="small">命中条目: <code>' + guardEsc(d.entry) + '</code>' +
+                    (d.level ? '（' + guardEsc(d.level) + '）' : '') + '</div>' : '') +
+                '</div>';
+        });
+}
+
+/* ---------------------------------------------------------------- 渲染 */
+function guardRender(s) {
+    var enabled = !!s.enabled, patched = !!s.detector_patched;
+    var sp = s.sysproxy || {};
+    var proxyOn = !!sp.active, proxyOther = !!sp.enabled && !proxyOn;
+
+    var badge = document.getElementById('guardStateBadge');
+    var text, cls;
+    if (s.available === false) { text = '拦截层不可用'; cls = 'bg-dark'; }
+    else if (!enabled) { text = '已停止'; cls = 'bg-secondary'; }
+    else if (proxyOn) { text = '拦截生效中'; cls = 'bg-success'; }
+    else { text = '部分生效（系统代理未开）'; cls = 'bg-warning text-dark'; }
+    badge.className = 'badge ' + cls;
+    badge.textContent = text;
+
+    document.getElementById('guardEnabled').innerHTML = enabled
+        ? '<span class="text-success">已开启</span>' : '<span class="text-secondary">已停止</span>';
+    document.getElementById('guardProxy').innerHTML = proxyOn
+        ? '<span class="text-success">走 guard</span>'
+        : (proxyOther ? '<span class="text-warning">其它程序管理</span>'
+                      : '<span class="text-secondary">未启用</span>');
+    document.getElementById('guardDetect').innerHTML = patched
+        ? '<span class="text-success">已开启</span>' : '<span class="text-secondary">未开启</span>';
+    var c = s.counters || {};
+    document.getElementById('guardBlocked').textContent = (c.blocked || 0) + ' 次';
+
+    var lines = [];
+    if (s.available === false) { lines.push('拦截层不可用: ' + (s.error || '')); }
+    if (s.forwarded) {
+        lines.push('状态来自本机独立运行的 guard 控制台 ' + (s.forwarded_to || '') +
+                   '（本页的操作会自动转交给它，结果和直接在它自己的控制台里操作一致）。');
+    }
+    if (s.forward_error) {
+        lines.push('本进程里没有拦截层运行时，也连不上独立 guard 控制台: ' + s.forward_error +
+                   '（可以先在别处启动 guard，或点【开始拦截】在本进程内启动它）');
+    }
+    if (s.available !== false && s.running === false && !s.forwarded) {
+        lines.push('拦截层当前不在运行 —— 点【加入拦截】会自动把它启动起来；' +
+                   '要让浏览器真的被拦，还需要点【开始拦截】把系统代理指向 guard。');
+    }
+    if (sp.mismatch) {
+        lines.push('系统代理没生效: 设置被别的程序改回去了（可能有代理软件在守护它）。' +
+                   '可以在那个软件里把系统代理指向 127.0.0.1:8888，或只靠油猴脚本那条通道。');
+    }
+    if (!enabled && proxyOn) {
+        lines.push('注意: 拦截总开关已关闭, 但系统代理仍指向 guard —— 请求会被全部放行, ' +
+                   '建议点【停止拦截】把代理设置还原。');
+    }
+    if (enabled && !proxyOn) {
+        lines.push('当前只有 eyilianjie 页面内 + 装了油猴脚本的浏览器会拦截; ' +
+                   '勾选「本地代理拦截」后点【开始拦截】，可让所有浏览器生效。');
+    }
+    if (enabled && !patched) { lines.push('「检测即真封」未开启: eyilianjie 判为恶意的链接不会自动进入拦截集。'); }
+    var lw = s.logwatch || {};
+    if (lw.last_scan) {
+        lines.push('检测日志联动: 上次扫描 ' + lw.last_scan +
+                   '，累计导入 ' + (lw.imported_urls || 0) + ' 条 URL。');
+    }
+    var apiBaseEl = document.getElementById('guardApiBase');   // 该节点已从页面移除, 这里做空值保护
+    if (apiBaseEl && s.api_base) { apiBaseEl.textContent = s.api_base + '/'; }
+    var hint = document.getElementById('guardHint');
+    hint.innerHTML = lines.map(function (t) { return '· ' + guardEsc(t); }).join('<br>');
+    hint.className = 'alert alert-secondary mt-3 mb-0 py-2 small' + (lines.length ? '' : ' d-none');
+
+    guardRenderModes(s);
+    guardRenderLogs(s);
+    guardRenderAllow(s);
+    guardRenderDynamic(s);
+}
+
+function guardRenderModes(s) {
+    var box = document.getElementById('guardModes');
+    var modes = s.modes || [];
+    if (!modes.length) {
+        box.innerHTML = '<div class="col-12 text-muted">没有可用的拦截方式（拦截层不可用）</div>';
+        return;
+    }
+    var groups = [['拦截通道', ['proxy', 'detector']],
+                  ['判定规则（勾选哪些规则参与拦截）', ['rule']]];
+    var html = '';
+    groups.forEach(function (g) {
+        var items = modes.filter(function (m) { return g[1].indexOf(m.kind) >= 0; });
+        if (!items.length) { return; }
+        html += '<div class="col-12 mt-1"><h6 class="text-muted mb-0">' + g[0] +
+                '</h6><hr class="mt-1 mb-2"></div>';
+        items.forEach(function (m) {
+            var id = 'mode_' + String(m.key).replace(/[^a-zA-Z0-9]/g, '_');
+            html += '<div class="col-md-6"><div class="form-check border rounded p-3 h-100">' +
+                '<input class="form-check-input guard-mode" type="checkbox" id="' + id +
+                '" value="' + guardEsc(m.key) + '"' + (m.value ? ' checked' : '') + '>' +
+                '<label class="form-check-label fw-semibold" for="' + id + '">' + guardEsc(m.label) +
+                '</label><div class="form-text mt-1">' + guardEsc(m.hint) + '</div></div></div>';
+        });
+    });
+    box.innerHTML = html;
+}
+
+function guardRenderLogs(s) {
+    var tbody = document.getElementById('guardLogs');
+    var logs = (s.logs || []).slice(0, 20);      // 只显示最近 20 条
+    if (!logs.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-muted">暂无记录（还没有被拦截或被放行的请求）</td></tr>';
+        return;
+    }
+    var html = '';
+    logs.forEach(function (l) {
+        var blocked = (l.action === 'blocked');
+        html += '<tr><td class="text-muted small">' + guardEsc(l.time) + '</td>' +
+            '<td><span class="badge bg-' + (blocked ? 'danger' : 'success') + '">' +
+              (blocked ? '拦截' : '放行') + '</span></td>' +
+            '<td class="small text-break"><code>' + guardEsc(l.url) + '</code>' +
+              (l.kind ? ' <span class="badge bg-secondary">' + guardEsc(l.kind) + '</span>' : '') + '</td>' +
+            '<td class="small">' + guardEsc(l.reason) + '</td>' +
+            '<td class="small text-muted">' + guardEsc(l.source) + '</td></tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+/* ---------------------------------------------------------------- 初始化 */
+document.addEventListener('DOMContentLoaded', function () {
+    guardLoad();
+    setInterval(function () { guardLoad(); }, 10000);
+    [['guardBlockInput', 'block'], ['guardAllowInput', 'allow']].forEach(function (pair) {
+        var el = document.getElementById(pair[0]);
+        if (el) {
+            el.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); guardEntry(pair[1]); }
+            });
+        }
+    });
+    var checkInput = document.getElementById('guardCheckInput');
+    if (checkInput) {
+        checkInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); guardCheck(); }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+

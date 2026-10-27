@@ -1,0 +1,64 @@
+{
+  "trained_at": "2026-10-20 21:24:25",
+  "train": 171274,
+  "val": 30223,
+  "pos": 44745,
+  "neg": 156752,
+  "pos_by_cat": {
+    "色情网站": {
+      "available": 48417,
+      "used": 20000
+    },
+    "恶意URL": {
+      "available": 4101,
+      "used": 4101
+    },
+    "钓鱼网站": {
+      "available": 118,
+      "used": 118
+    },
+    "钓鱼": {
+      "available": 0,
+      "used": 19621
+    },
+    "恶意下载": {
+      "available": 0,
+      "used": 905
+    }
+  },
+  "neg_dropped_adult": 3401,
+  "auc_val": 0.93508,
+  "auc_test": 0.90029,
+  "threshold": 0.9984421156867083,
+  "max_fpr": 0.0001,
+  "recall": 0.2946,
+  "fp_test_neg": 2,
+  "fp_realtraffic": 1,
+  "platt": {
+    "a": 1.0932244211842312,
+    "b": 0.12478770348473525
+  },
+  "by_cat": {
+    "恶意URL": {
+      "hit": 61,
+      "total": 627
+    },
+    "钓鱼网站": {
+      "hit": 1,
+      "total": 20
+    },
+    "色情网站": {
+      "hit": 3541,
+      "total": 11583
+    }
+  },
+  "engine_recall": 0.27285,
+  "or_recall": 0.29469,
+  "baseline": {
+    "auc": 0.91607,
+    "threshold": 0.996534347830543,
+    "recall": 0.04661,
+    "fp_neg": 3,
+    "own_threshold": 0.9958982016236757
+  }
+}

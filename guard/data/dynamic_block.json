@@ -1,0 +1,58 @@
+{
+  "hosts": {
+    "secure-login.faceb00k.tk": {
+      "reason": "eyilianjie 已判定为恶意 · 危险 · 评分 1",
+      "category": "eyilianjie 判定",
+      "source": "eyilianjie",
+      "note": "来自检测日志",
+      "ts": "2026-09-18 11:20:40",
+      "level": "域名"
+    },
+    "faceb00k.tk": {
+      "reason": "eyilianjie 已判定为恶意 · 危险 · 评分 1",
+      "category": "eyilianjie 判定",
+      "source": "eyilianjie",
+      "note": "来自检测日志",
+      "ts": "2026-09-18 11:20:40",
+      "level": "注册域"
+    },
+    "free-gift-card-now.xyz": {
+      "reason": "eyilianjie 已判定为恶意 · 危险 · 评分 49",
+      "category": "eyilianjie 判定",
+      "source": "eyilianjie",
+      "note": "来自检测日志",
+      "ts": "2026-10-23 22:48:35",
+      "level": "域名"
+    }
+  },
+  "urls": {
+    "http://secure-login.faceb00k.tk/verify?a...": {
+      "reason": "eyilianjie 已判定为恶意 · 危险 · 评分 1",
+      "category": "eyilianjie 判定",
+      "source": "eyilianjie",
+      "note": "来自检测日志",
+      "ts": "2026-09-18 11:20:40",
+      "host": "secure-login.faceb00k.tk",
+      "level": "URL"
+    },
+    "http://secure-login.faceb00k.tk/verify?acc=xxx": {
+      "reason": "eyilianjie 已判定为恶意 · 可疑 · 评分 41",
+      "category": "eyilianjie 判定",
+      "source": "eyilianjie",
+      "note": "来自检测日志",
+      "ts": "2026-09-08 19:52:34",
+      "host": "secure-login.faceb00k.tk",
+      "level": "URL"
+    },
+    "http://free-gift-card-now.xyz/login?token=abc": {
+      "reason": "eyilianjie 已判定为恶意 · 危险 · 评分 49",
+      "category": "eyilianjie 判定",
+      "source": "eyilianjie",
+      "note": "来自检测日志",
+      "ts": "2026-10-23 22:48:35",
+      "host": "free-gift-card-now.xyz",
+      "level": "URL"
+    }
+  },
+  "updated_at": "2026-10-27 09:40:45"
+}

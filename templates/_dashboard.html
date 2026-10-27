@@ -1,0 +1,126 @@
+{# 首页右栏：统计摘要 + 最近检测 + 7天趋势。
+   首屏由 index.html include；检测完成后 /detect 用同一模板渲染并局部替换 #dashboard。 #}
+    <div class="card stats-card">
+        <div class="card-header">
+            <h5>{{ icon('chart', 20, '统计') }} 统计摘要</h5>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>总检测次数</span>
+                    <strong>{{ stats.total_detections }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between text-danger">
+                    <span>恶意链接</span>
+                    <strong>{{ stats.malicious_count }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between text-success">
+                    <span>安全链接</span>
+                    <strong>{{ stats.safe_count }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>恶意率</span>
+                    <strong>{{ stats.malicious_rate }}%</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>平均评分</span>
+                    <strong>{{ stats.avg_score }}/100</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>24小时内</span>
+                    <strong>{{ stats.recent_24h }}</strong>
+                </li>
+            </ul>
+
+            {# 迷你占比条：恶意 vs 安全（数据全部来自现有 stats，无新增取数） #}
+            <div class="ratio-wrap">
+                {% if stats.total_detections %}
+                <div class="d-flex justify-content-between small text-muted mb-1">
+                    <span>恶意 / 安全 占比</span>
+                    <span>{{ stats.malicious_rate }}% / {{ safe_rate }}%</span>
+                </div>
+                <div class="ratio-bar" role="img"
+                     aria-label="恶意链接占比 {{ stats.malicious_rate }}%，安全链接占比 {{ safe_rate }}%">
+                    <div class="mal" style="width: {{ stats.malicious_rate }}%"></div>
+                    <div class="safe" style="width: {{ safe_rate }}%"></div>
+                </div>
+                <div class="ratio-legend">
+                    <span><span class="dot" style="background:#dc3545"></span>恶意 {{ stats.malicious_count }}</span>
+                    <span><span class="dot" style="background:#198754"></span>安全 {{ stats.safe_count }}</span>
+                </div>
+                {% else %}
+                <div class="d-flex justify-content-between small text-muted mb-1">
+                    <span>恶意 / 安全 占比</span><span>暂无数据</span>
+                </div>
+                <div class="ratio-bar" role="img" aria-label="暂无检测数据"><div class="empty"></div></div>
+                {% endif %}
+            </div>
+
+            {# 迷你趋势：最近 7 天每日检测量（后端只读聚合；无记录时显示空状态） #}
+            {% if trend %}
+            <div class="spark-head">
+                <span>最近 7 天检测 <span class="text-muted">· {{ trend[0].label }} ~ {{ trend[trend|length - 1].label }}</span></span>
+                <span>峰值 {{ trend_peak }} 次/天</span>
+            </div>
+            <div class="spark" role="img" aria-label="最近 7 天每日检测量趋势">
+                {% for d in trend %}
+                <div class="spark-col" title="{{ d.label }}：{{ d.total }} 次（恶意 {{ d.malicious }}）">
+                    <div class="spark-bar {% if d.malicious %}has-mal{% endif %}"
+                         style="height: {{ d.pct if d.pct > 0 else 1 }}%"></div>
+                    <span class="spark-label">{{ d.week }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="spark-head">
+                <span>最近 7 天检测</span>
+                <span>暂无记录</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if recent %}
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5>{{ icon('clipboard', 20, '历史') }} 最近检测</h5>
+        </div>
+        <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+                {% for log in recent %}
+                <li class="list-group-item">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="flex-grow-1 min-w-0">
+                            {{ get_risk_badge(log)|safe }}
+                        </div>
+                        <small class="text-muted text-nowrap">
+                            🕐 {{ log.timestamp|format_time }}
+                        </small>
+                    </div>
+                    <small class="text-break text-muted d-block mt-1">
+                        {# 链接点击守卫: 恶意/命中黑名单 → 拦截提示; 安全 → 新标签页打开 #}
+                        {% set blocked = log.is_malicious or log.blacklist_match %}
+                        <a href="javascript:void(0)"
+                           class="{{ 'text-danger text-decoration-line-through fw-bold' if blocked else 'link-primary' }}"
+                           data-url="{{ log.url }}"
+                           data-blocked="{{ '1' if blocked else '0' }}"
+                           data-reason="{{ '命中黑名单记录' if log.blacklist_match else '检测判定为恶意链接（评分 ' ~ log.score ~ '/100）' }}"
+                           onclick="return guardedOpen(this)">
+                            {{ log.url[:40] }}{% if log.url|length > 40 %}...{% endif %}
+                        </a>
+                        {% if blocked %}
+                        <span class="badge bg-danger ms-1">
+                            {{ icon('shield', 14, '拦截') }} 已拦截
+                        </span>
+                        {% else %}
+                        <span class="badge bg-success ms-1">
+                            {{ icon('check', 14, '安全') }} 可访问
+                        </span>
+                        {% endif %}
+                    </small>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}

@@ -1,0 +1,72 @@
+{
+    "description": "恶意URL模式库 - 用于检测已知的恶意链接模式(由 utils.match_pattern_library 读取, analyzer 的 _check_malicious_patterns 使用)",
+    "version": "1.1",
+    "patterns": {
+        "phishing": [
+            "login*verify",
+            "signin*secure",
+            "account*update",
+            "banking*confirm",
+            "password*reset",
+            "paypal*security",
+            "appleid*verify",
+            "outlook*verify",
+            "office365*login",
+            "amazon*account",
+            "netflix*update",
+            "facebook*secure",
+            "instagram*verify",
+            "verify*account",
+            "confirm*identity",
+            "unlock*account",
+            "suspend*account",
+            "billing*update",
+            "wallet*connect",
+            "metamask*verify",
+            "airdrop*claim",
+            "登录*验证",
+            "账号*异常",
+            "账户*冻结",
+            "实名*认证",
+            "银行卡*验证"
+        ],
+        "malware": [
+            "setup*.exe",
+            "installer*.exe",
+            "crack*.exe",
+            "keygen*.exe",
+            "patch*.exe",
+            "hack*.exe",
+            "update*flash*player",
+            "*download*.scr",
+            "*payload*.bin"
+        ],
+        "deception": [
+            "free-*",
+            "win-*prize",
+            "lottery*winner",
+            "congratulations*you*win",
+            "claim*prize",
+            "gift-card*free",
+            "inheritance*claim",
+            "bitcoin*double",
+            "crypto*giveaway",
+            "investment*guaranteed",
+            "work-from-home*easy",
+            "make-money*fast",
+            "get-rich*quick",
+            "彩票*中奖",
+            "红包*领取",
+            "补贴*领取"
+        ]
+    },
+    "suspicious_keywords_extended": [
+        "security", "secure", "login", "signin", "verify",
+        "account", "update", "confirm", "validate", "authenticate",
+        "password", "credential", "wallet", "banking", "paypal",
+        "refund", "bonus", "lottery", "prize", "free", "win",
+        "crypto", "bitcoin", "investment", "token", "2fa",
+        "identity", "ssn", "social", "recovery", "billing",
+        "invoice", "unlock", "suspend", "kyc", "airdrop"
+    ]
+}

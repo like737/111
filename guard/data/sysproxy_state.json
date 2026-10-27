@@ -1,0 +1,10 @@
+{
+  "enabled_by_us": false,
+  "previous": {
+    "ProxyEnable": 0,
+    "ProxyServer": "127.0.0.1:8888",
+    "ProxyOverride": "localhost;127.0.0.1;*.local;<local>",
+    "AutoConfigURL": ""
+  },
+  "restored_at": "2026-10-27 08:46:21"
+}

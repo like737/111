@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-10-20 22:07:16",
+  "seed": 42,
+  "positives": {
+    "external_url": 18363,
+    "blacklist_url_level": 60694,
+    "total": 79057,
+    "categories": {
+      "恶意下载": 18067,
+      "恶意URL": 60544,
+      "钓鱼网站": 150,
+      "钓鱼": 296
+    }
+  },
+  "negatives": {
+    "domains": 36763,
+    "total": 36763,
+    "path_templates": 20,
+    "dropped_leak": 10
+  },
+  "split": {
+    "pos": {
+      "domains": 16678,
+      "train_domains": 13342,
+      "eval_domains": 3336
+    },
+    "neg": {
+      "domains": 35842,
+      "train_domains": 28673,
+      "eval_domains": 7169
+    },
+    "ratio_train": 0.8
+  },
+  "sets": {
+    "train_pos": 67151,
+    "train_neg": 29418,
+    "eval_pos": 11906,
+    "eval_neg": 7345,
+    "eval_pos_ip": 7088
+  },
+  "leak_guard": "负样本注册域与任何正样本注册域无交集"
+}

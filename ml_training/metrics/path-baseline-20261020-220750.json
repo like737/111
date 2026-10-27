@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-10-20 22:07:50",
+  "model": "D:\\Vscode\\eyilianjie\\data\\models\\path_model.pkl",
+  "own_threshold": 0.61,
+  "eval_pos": 11906,
+  "eval_neg": 7345,
+  "own_threshold_recall": 0.02579,
+  "own_threshold_fp": 1,
+  "auc": 0.71885,
+  "curve": [
+    {
+      "fpr": 0.0,
+      "threshold": 0.701300001,
+      "recall": 0.020325886107844783,
+      "fp": 0
+    },
+    {
+      "fpr": 0.0001,
+      "threshold": 0.701300001,
+      "recall": 0.020325886107844783,
+      "fp": 0
+    },
+    {
+      "fpr": 0.001,
+      "threshold": 0.0771,
+      "recall": 0.06509323030404839,
+      "fp": 7
+    },
+    {
+      "fpr": 0.01,
+      "threshold": 0.0474,
+      "recall": 0.14765664370905426,
+      "fp": 73
+    }
+  ],
+  "by_cat": {
+    "恶意URL": {
+      "hit": 268,
+      "total": 9472
+    },
+    "恶意下载": {
+      "hit": 39,
+      "total": 2389
+    },
+    "钓鱼网站": {
+      "hit": 0,
+      "total": 14
+    },
+    "钓鱼": {
+      "hit": 0,
+      "total": 31
+    }
+  },
+  "domain_channel_hit_rate": 0.01142,
+  "or_recall_with_domain": 0.03721,
+  "caveat": "URL 级负样本为构造（正常域名×路径模板），误报率偏低"
+}

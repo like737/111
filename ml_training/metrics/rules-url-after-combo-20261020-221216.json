@@ -1,0 +1,148 @@
+{
+  "generated_at": "2026-10-20 22:12:16",
+  "tag": "after-combo",
+  "threshold": 60,
+  "eval_pos": 11906,
+  "eval_neg": 7345,
+  "recall": 0.60239,
+  "fp": 3,
+  "by_cat": {
+    "恶意URL": {
+      "hit": 7164,
+      "total": 9472
+    },
+    "恶意下载": {
+      "hit": 8,
+      "total": 2389
+    },
+    "钓鱼网站": {
+      "hit": 0,
+      "total": 14
+    },
+    "钓鱼": {
+      "hit": 0,
+      "total": 31
+    }
+  },
+  "rules": {
+    "no_https": {
+      "pos": 7710,
+      "neg": 0,
+      "pos_rate": 0.64757,
+      "neg_rate": 0.0,
+      "lift": 647572.65
+    },
+    "ip_host": {
+      "pos": 7088,
+      "neg": 0,
+      "pos_rate": 0.59533,
+      "neg_rate": 0.0,
+      "lift": 595330.09
+    },
+    "port": {
+      "pos": 4634,
+      "neg": 0,
+      "pos_rate": 0.38922,
+      "neg_rate": 0.0,
+      "lift": 389215.52
+    },
+    "dangerous_extension": {
+      "pos": 942,
+      "neg": 0,
+      "pos_rate": 0.07912,
+      "neg_rate": 0.0,
+      "lift": 79119.77
+    },
+    "combo": {
+      "pos": 598,
+      "neg": 2,
+      "pos_rate": 0.05023,
+      "neg_rate": 0.000272,
+      "lift": 184.46
+    },
+    "suspicious_tld": {
+      "pos": 409,
+      "neg": 220,
+      "pos_rate": 0.03435,
+      "neg_rate": 0.029952,
+      "lift": 1.15
+    },
+    "typosquatting": {
+      "pos": 328,
+      "neg": 92,
+      "pos_rate": 0.02755,
+      "neg_rate": 0.012526,
+      "lift": 2.2
+    },
+    "keywords": {
+      "pos": 167,
+      "neg": 731,
+      "pos_rate": 0.01403,
+      "neg_rate": 0.099523,
+      "lift": 0.14
+    },
+    "pattern_library": {
+      "pos": 115,
+      "neg": 3,
+      "pos_rate": 0.00966,
+      "neg_rate": 0.000408,
+      "lift": 23.65
+    },
+    "subdomain": {
+      "pos": 55,
+      "neg": 63,
+      "pos_rate": 0.00462,
+      "neg_rate": 0.008577,
+      "lift": 0.54
+    },
+    "adult_content": {
+      "pos": 42,
+      "neg": 1,
+      "pos_rate": 0.00353,
+      "neg_rate": 0.000136,
+      "lift": 25.91
+    },
+    "deceptive_domain": {
+      "pos": 39,
+      "neg": 0,
+      "pos_rate": 0.00328,
+      "neg_rate": 0.0,
+      "lift": 3275.66
+    },
+    "embedded_url": {
+      "pos": 34,
+      "neg": 0,
+      "pos_rate": 0.00286,
+      "neg_rate": 0.0,
+      "lift": 2855.7
+    },
+    "dga": {
+      "pos": 27,
+      "neg": 283,
+      "pos_rate": 0.00227,
+      "neg_rate": 0.03853,
+      "lift": 0.06
+    },
+    "special_chars": {
+      "pos": 23,
+      "neg": 30,
+      "pos_rate": 0.00193,
+      "neg_rate": 0.004084,
+      "lift": 0.47
+    },
+    "encoded": {
+      "pos": 20,
+      "neg": 0,
+      "pos_rate": 0.00168,
+      "neg_rate": 0.0,
+      "lift": 1679.83
+    },
+    "free_hosting": {
+      "pos": 0,
+      "neg": 1,
+      "pos_rate": 0.0,
+      "neg_rate": 0.000136,
+      "lift": 0.0
+    }
+  }
+}

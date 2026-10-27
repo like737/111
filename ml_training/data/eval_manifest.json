@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-10-20 20:33:09",
+  "blacklist_total": 181195,
+  "blacklist_by_category": {
+    "恶意URL": 60815,
+    "钓鱼网站": 300,
+    "色情网站": 120080
+  },
+  "blacklist_domains": 138342,
+  "blacklist_ip": 42853,
+  "blacklist_url": 17955,
+  "negatives_raw": 37457,
+  "negatives_clean": 36773,
+  "negatives_dropped_adult": 684,
+  "negatives_punycode": 1430,
+  "tld_risk_entries": 46,
+  "tld_risk_exempt": []
+}

@@ -1,0 +1,36 @@
+{
+    "description": "已知可疑域名与域名模式列表 - 用于快速匹配检测(由 utils.match_pattern_library 读取)",
+    "version": "1.1",
+    "known_suspicious": [
+        "free-money.tk",
+        "win-prize.ml",
+        "secure-login.ga",
+        "account-verify.cf",
+        "banking-update.gq",
+        "apple-id-verify.ml",
+        "paypal-security.ga",
+        "netflix-update.tk",
+        "amazon-account.gq",
+        "download-free-software.tk",
+        "crack-keygen.ga",
+        "login-verify.date",
+        "secure-update.download",
+        "you-win.top",
+        "claim-gift.work"
+    ],
+    "suspicious_patterns": [
+        "*-secure-*",
+        "*-login-*",
+        "*-verify-*",
+        "*-account-*",
+        "secure-*.*",
+        "verify-*.*",
+        "*-update-*",
+        "*-confirm-*",
+        "*-signin-*",
+        "*-banking-*",
+        "*-wallet-*",
+        "*-prize*",
+        "*-free*"
+    ]
+}

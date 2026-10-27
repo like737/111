@@ -1,0 +1,57 @@
+# ============================================================
+#  eyilianjie  .gitignore
+#  目标：只把源码与项目资源入库，排除可重建产物、体积巨大的
+#        虚拟环境，以及任何凭证 / 私钥 / 个人隐私数据。
+# ============================================================
+
+# ---------- Python 虚拟环境（316 MB，必须排除）----------
+.venv/
+venv/
+env/
+ENV/
+
+# ---------- Python 缓存与打包产物 ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---------- 编辑器 / IDE 本地设置 ----------
+.idea/
+.vscode/
+
+# ---------- 证书与私钥：绝不入库 ----------
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+ca.srl
+ext.cnf
+
+# ---------- 含 API Key 的本地配置 ----------
+# config.json 内含真实 api_keys，请勿提交；如需要模板可提交 config.example.json
+config.json
+config.local.json
+.env
+.env.*
+!.env.example
+
+# ---------- 运行期日志与个人隐私数据 ----------
+detection_log.json
+*.log
+logs/
+
+# ---------- 操作系统垃圾文件 ----------
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp

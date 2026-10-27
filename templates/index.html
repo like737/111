@@ -1,0 +1,102 @@
+﻿{% extends "base.html" %}
+
+{% block title %}🔍 URL检测 - 恶意链接检测系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4>{{ icon('search', 20, '检测') }} URL检测</h4>
+            </div>
+            <div class="card-body">
+                <form id="detectForm" method="POST" action="{{ url_for('detect') }}">
+                    <div class="mb-3">
+                        <label for="url" class="form-label">请输入要检测的URL</label>
+                        <input type="text" class="form-control form-control-lg url-input" 
+                               id="url" name="url" placeholder="例如: https://example.com" 
+                               autocomplete="off">
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="use_api" name="use_api" value="1"
+                               {% if ai_available %}checked{% else %}disabled{% endif %}>
+                        <label class="form-check-label" for="use_api">{{ icon('robot', 16, 'AI') }} AI辅助检测（DeepSeek 大模型复核）</label>
+                        {% if not ai_available %}
+                        <div class="form-text">当前不可用：未配置密钥或已在设置中关闭</div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        {{ icon('search', 20, '检测') }} 开始检测
+                    </button>
+                </form>
+
+                <div id="resultArea" class="mt-4" style="display: none;" role="status" aria-live="polite"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4" id="dashboard">
+        {% include '_dashboard.html' %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('detectForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const urlInput = document.getElementById('url');
+    const resultArea = document.getElementById('resultArea');
+    const url = urlInput.value.trim();
+    
+    if (!url) {
+        alert('请输入URL');
+        return;
+    }
+    
+    resultArea.style.display = 'block';
+    resultArea.innerHTML = `
+        <div class="alert alert-info">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            正在分析URL: ${url}...
+        </div>
+    `;
+    
+    try {
+        const formData = new FormData();
+        formData.append('url', url);
+
+        // 是否启用AI辅助检测（首页勾选项）: 传给后端决定本次检测是否调用 DeepSeek
+        const useApiBox = document.getElementById('use_api');
+        formData.append('use_api', (useApiBox && useApiBox.checked) ? '1' : '0');
+        
+        const response = await fetch('{{ url_for("detect") }}', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            resultArea.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+            return;
+        }
+        
+        resultArea.innerHTML = data.html;
+
+        // 检测刚完成 → 立即用服务端渲染好的同一套模板刷新右栏（统计摘要 + 最近检测）
+        if (data.dashboard_html) {
+            const dashboard = document.getElementById('dashboard');
+            if (dashboard) {
+                dashboard.innerHTML = data.dashboard_html;
+            }
+        }
+    } catch (error) {
+        resultArea.innerHTML = `<div class="alert alert-danger">检测出错: ${error.message}</div>`;
+    }
+});
+</script>
+{% endblock %}

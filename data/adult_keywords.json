@@ -1,0 +1,38 @@
+{
+    "description": "成人/赌博类内容关键词 - 由 utils.match_adult_keywords 读取, analyzer._check_adult_content 使用; 命中域名直接定罪(不需要 AI 参与)",
+    "version": "1.0",
+    "_scoring": {
+        "domain_strong": "域名子串命中 → 85 分(≥阈值, 单独定罪)",
+        "adult_brands": "知名成人站品牌(域名子串) → 85 分",
+        "gambling": "赌博类(域名子串) → 85 分",
+        "domain_weak": "短词/易误伤词, 仅\"完整域名标签\"匹配(如 sex.xxx 可, sexeducation 不可) → 35 分(仅提示)",
+        "path": "路径/参数子串命中 → 25 分(仅提示, 避免误伤正常站点里的文章/讨论页)"
+    },
+    "domain_strong": [
+        "porn", "porno", "xxx", "hentai", "nsfw", "nude", "nuude",
+        "escort", "onlyfans", "camgirl", "camsoda", "milf", "fuck", "pussy",
+        "sexcam", "sextube", "sextape", "adultcam", "freexxx",
+        "色情", "黄色", "成人视频", "成人影片", "成人网站", "裸聊", "约炮"
+    ],
+    "adult_brands": [
+        "pornhub", "xvideos", "xnxx", "xhamster", "redtube", "youporn",
+        "brazzers", "chaturbate", "livejasmin", "stripchat", "bongacams",
+        "spankbang", "eporner", "hqporner", "motherless", "beeg", "tnaflix",
+        "fapello", "erome", "thothub", "coomer", "noodlemagazine",
+        "hanime", "nhentai", "hitomi", "avgle", "missav", "jable",
+        "javbus", "javdb", "supjav", "sextb", "18av"
+    ],
+    "gambling": [
+        "casino", "betting", "sportsbook", "baccarat", "roulette", "slots",
+        "poker", "gambling", "bet365", "1xbet", "betway", "dafabet",
+        "fun88", "188bet", "sbobet", "12bet", "博彩", "赌场", "赌博",
+        "六合彩", "时时彩", "真人娱乐场"
+    ],
+    "domain_weak": [
+        "sex", "adult", "jav", "lottery", "bingo", "hookup"
+    ],
+    "path": [
+        "porn", "xxx", "hentai", "nsfw", "milf", "escort", "camgirl",
+        "casino", "betting", "slots", "baccarat", "roulette"
+    ]
+}

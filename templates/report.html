@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}📊 检测报告 - 恶意链接检测系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>{{ icon('chart', 20, '报告') }} 检测报告</h4>
+                <a href="{{ url_for('export_csv') }}" class="btn btn-outline-primary btn-sm">
+                    📥 导出CSV
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-2">
+                        <div class="card stat-tile bg-primary text-white text-center p-3">
+                            <h3>{{ stats.total_detections }}</h3>
+                            <small>总检测</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card stat-tile bg-danger text-white text-center p-3">
+                            <h3>{{ stats.malicious_count }}</h3>
+                            <small>恶意</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card stat-tile bg-success text-white text-center p-3">
+                            <h3>{{ stats.safe_count }}</h3>
+                            <small>安全</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card stat-tile bg-warning text-dark text-center p-3">
+                            <h3>{{ stats.malicious_rate }}%</h3>
+                            <small>恶意率</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card stat-tile bg-info text-white text-center p-3">
+                            <h3>{{ stats.avg_score }}</h3>
+                            <small>平均分</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card stat-tile bg-secondary text-white text-center p-3">
+                            <h3>{{ stats.recent_24h }}</h3>
+                            <small>24小时</small>
+                        </div>
+                    </div>
+                </div>
+
+                {% if recent %}
+                <h5 class="mb-3">{{ icon('clipboard', 20, '历史') }} 检测历史 (最近 {{ recent|length }} 条)</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>时间</th>
+                                <th>URL</th>
+                                <th style="min-width: 200px;">{{ icon('chart', 16, '评分') }} 风险评分</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in recent %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td><small>{{ log.timestamp[:19] }}</small></td>
+                                <td>
+                                    {# 链接点击守卫: 恶意/命中黑名单 → 点击被拦截 #}
+                                    {% set blocked = log.is_malicious or log.blacklist_match %}
+                                    <small class="text-break">
+                                        <a href="javascript:void(0)"
+                                           class="{{ 'text-danger text-decoration-line-through fw-bold' if blocked else 'link-primary' }}"
+                                           data-url="{{ log.url }}"
+                                           data-blocked="{{ '1' if blocked else '0' }}"
+                                           data-reason="{{ '命中黑名单记录' if log.blacklist_match else '检测判定为恶意链接（评分 ' ~ log.score ~ '/100）' }}"
+                                           onclick="return guardedOpen(this)">
+                                            {{ log.url[:60] }}{% if log.url|length > 60 %}...{% endif %}
+                                        </a>
+                                        {% if blocked %}<span class="badge bg-danger ms-1">{{ icon('shield', 14, '拦截') }} 已拦截</span>{% endif %}
+                                    </small>
+                                </td>
+                                <td>{{ get_risk_badge(log)|safe }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    {{ mascot(96, 'chart') }}
+                    <p class="text-muted fs-5 mb-1">暂无检测记录</p>
+                    <p class="text-muted mb-0">检测一次链接后，这里会展示历史记录与风险评分</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
