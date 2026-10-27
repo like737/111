@@ -1,15 +1,19 @@
 name: sync-docs
 
-# 模板 / 静态资源变更后，自动重新导出 docs/ 静态快照并提交，
-# 避免"改了模板忘了同步线上演示站"。
+# 模板 / 静态资源变更后，自动重新导出 docs/ 静态快照。
+#
+# 为什么是"开 PR"而不是"直接 push main"：
+#   main 已启用分支保护，要求走 Pull Request。而个人账号仓库（owner 是 User
+#   而非 Organization）不允许把 GitHub Actions 应用加入分支保护的 bypass 列表
+#   —— 经典保护 API 返回 422 "Only organization repositories can have users and
+#   team restrictions"，规则集 API 返回 422 "Actor GitHub Actions integration
+#   must be part of the ruleset source or owner organization"。
+#   因此改为：机器人把快照推到固定分支并开/更新 PR，由管理员合并（管理员不受
+#   保护规则约束，可直接合并）。好处是不需要任何 PAT 密钥。
 #
 # 为什么用 windows-latest：
-#   本项目含 Windows 专用模块（guard 的系统代理 / winreg 等），
-#   Ubuntu runner 上导入 web_app 存在失败风险，Windows 环境与开发机一致。
-#
-# 为什么不会循环触发：
-#   paths 只匹配源码与资源目录，本 workflow 自己产生的提交只改 docs/**，
-#   不会命中 paths 过滤；提交信息里另加 [skip ci] 作为双保险。
+#   本项目含 Windows 专用模块（guard 的系统代理 / winreg），Ubuntu runner 上
+#   导入 web_app 存在失败风险；Windows 环境与开发机一致。
 
 on:
   push:
@@ -26,6 +30,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: sync-docs
@@ -52,16 +57,38 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python tools/export_docs.py
 
-      - name: 提交并推送 docs/
+      - name: 提交到固定分支并开/更新 PR
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config core.autocrlf false
+
           git add docs
           if git diff --cached --quiet; then
-            echo "docs/ 无变化，跳过提交"
+            echo "docs/ 无变化，跳过"
             exit 0
           fi
-          git commit -m "chore(docs): 自动同步静态快照 [skip ci]"
-          git push
+
+          BRANCH="docs/auto-sync"
+          git checkout -B "$BRANCH"
+          git commit -m "chore(docs): 自动同步静态快照"
+          git push --force origin "$BRANCH"
+
+          EXISTING=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "已存在开放 PR #$EXISTING，内容已更新"
+          else
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "chore(docs): 自动同步静态快照" \
+              --body "本 PR 由 \`sync-docs\` 工作流自动生成：\`templates/\`、\`static/\` 或 \`tools/\` 变更后重新导出 \`docs/\`。
+
+合并后 GitHub Pages 会自动重新部署。
+
+- 生成方式：\`python tools/export_docs.py\`
+- 数据来源：\`config.example.json\` + 合成演示数据（不含真实密钥与浏览记录）"
+          fi
