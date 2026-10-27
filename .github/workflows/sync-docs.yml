@@ -1,0 +1,67 @@
+name: sync-docs
+
+# 模板 / 静态资源变更后，自动重新导出 docs/ 静态快照并提交，
+# 避免"改了模板忘了同步线上演示站"。
+#
+# 为什么用 windows-latest：
+#   本项目含 Windows 专用模块（guard 的系统代理 / winreg 等），
+#   Ubuntu runner 上导入 web_app 存在失败风险，Windows 环境与开发机一致。
+#
+# 为什么不会循环触发：
+#   paths 只匹配源码与资源目录，本 workflow 自己产生的提交只改 docs/**，
+#   不会命中 paths 过滤；提交信息里另加 [skip ci] 作为双保险。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'templates/**'
+      - 'static/**'
+      - 'tools/**'
+      - 'web_app.py'
+      - 'icon_svg.py'
+      - 'config.example.json'
+      - '.github/workflows/sync-docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-docs
+  cancel-in-progress: true
+
+jobs:
+  export:
+    runs-on: windows-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: 安装依赖
+        run: python -m pip install --upgrade pip -q && python -m pip install -r requirements.txt -q
+
+      - name: 导出静态快照
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python tools/export_docs.py
+
+      - name: 提交并推送 docs/
+        shell: bash
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config core.autocrlf false
+          git add docs
+          if git diff --cached --quiet; then
+            echo "docs/ 无变化，跳过提交"
+            exit 0
+          fi
+          git commit -m "chore(docs): 自动同步静态快照 [skip ci]"
+          git push

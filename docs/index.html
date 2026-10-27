@@ -348,8 +348,10 @@
                     </div>
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" id="use_api" name="use_api" value="1"
-                               checked>
+                               disabled>
                         <label class="form-check-label" for="use_api"><svg class="ui-ic icon-16" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="AI"><rect x="4.6" y="6.4" width="14.8" height="11.6" rx="3.4" fill="#0B1020" opacity=".3"/><rect x="4.6" y="6.4" width="14.8" height="11.6" rx="3.4" stroke="#22D3EE" stroke-width="2"/><path d="M12 6.4V3.6" stroke="#38BDF8" stroke-width="2"/><circle cx="12" cy="2.8" r="1.2" fill="#F472B6"/><ellipse cx="9.3" cy="12" rx="1.7" ry="1.3" fill="#F43F5E"/><ellipse cx="14.7" cy="12" rx="1.7" ry="1.3" fill="#F43F5E"/><path d="M9.4 15.2h5.2" stroke="#E0F2FE" stroke-width="1.2"/><path d="M7 8.6h2M15 8.6h2" stroke="#7DD3FC" stroke-width="1.2"/></svg> AI辅助检测（DeepSeek 大模型复核）</label>
+                        
+                        <div class="form-text">当前不可用：未配置密钥或已在设置中关闭</div>
                         
                     </div>
                     <button type="submit" class="btn btn-primary btn-lg w-100">
@@ -372,23 +374,23 @@
             <ul class="list-group list-group-flush">
                 <li class="list-group-item d-flex justify-content-between">
                     <span>总检测次数</span>
-                    <strong>125</strong>
+                    <strong>12</strong>
                 </li>
                 <li class="list-group-item d-flex justify-content-between text-danger">
                     <span>恶意链接</span>
-                    <strong>14</strong>
+                    <strong>4</strong>
                 </li>
                 <li class="list-group-item d-flex justify-content-between text-success">
                     <span>安全链接</span>
-                    <strong>111</strong>
+                    <strong>8</strong>
                 </li>
                 <li class="list-group-item d-flex justify-content-between">
                     <span>恶意率</span>
-                    <strong>11.2%</strong>
+                    <strong>33.33%</strong>
                 </li>
                 <li class="list-group-item d-flex justify-content-between">
                     <span>平均评分</span>
-                    <strong>61.6/100</strong>
+                    <strong>79.4/100</strong>
                 </li>
                 <li class="list-group-item d-flex justify-content-between">
                     <span>24小时内</span>
@@ -401,16 +403,16 @@
                 
                 <div class="d-flex justify-content-between small text-muted mb-1">
                     <span>恶意 / 安全 占比</span>
-                    <span>11.2% / 88.8%</span>
+                    <span>33.33% / 66.67%</span>
                 </div>
                 <div class="ratio-bar" role="img"
-                     aria-label="恶意链接占比 11.2%，安全链接占比 88.8%">
-                    <div class="mal" style="width: 11.2%"></div>
-                    <div class="safe" style="width: 88.8%"></div>
+                     aria-label="恶意链接占比 33.33%，安全链接占比 66.67%">
+                    <div class="mal" style="width: 33.33%"></div>
+                    <div class="safe" style="width: 66.67%"></div>
                 </div>
                 <div class="ratio-legend">
-                    <span><span class="dot" style="background:#dc3545"></span>恶意 14</span>
-                    <span><span class="dot" style="background:#198754"></span>安全 111</span>
+                    <span><span class="dot" style="background:#dc3545"></span>恶意 4</span>
+                    <span><span class="dot" style="background:#198754"></span>安全 8</span>
                 </div>
                 
             </div>
@@ -419,49 +421,49 @@
             
             <div class="spark-head">
                 <span>最近 7 天检测 <span class="text-muted">· 10-21 ~ 10-27</span></span>
-                <span>峰值 12 次/天</span>
+                <span>峰值 2 次/天</span>
             </div>
             <div class="spark" role="img" aria-label="最近 7 天每日检测量趋势">
                 
-                <div class="spark-col" title="10-21：0 次（恶意 0）">
+                <div class="spark-col" title="10-21：2 次（恶意 0）">
                     <div class="spark-bar "
-                         style="height: 1%"></div>
+                         style="height: 100.0%"></div>
                     <span class="spark-label">三</span>
                 </div>
                 
-                <div class="spark-col" title="10-22：0 次（恶意 0）">
+                <div class="spark-col" title="10-22：1 次（恶意 0）">
                     <div class="spark-bar "
-                         style="height: 1%"></div>
+                         style="height: 50.0%"></div>
                     <span class="spark-label">四</span>
                 </div>
                 
-                <div class="spark-col" title="10-23：12 次（恶意 4）">
+                <div class="spark-col" title="10-23：2 次（恶意 2）">
                     <div class="spark-bar has-mal"
                          style="height: 100.0%"></div>
                     <span class="spark-label">五</span>
                 </div>
                 
-                <div class="spark-col" title="10-24：0 次（恶意 0）">
+                <div class="spark-col" title="10-24：1 次（恶意 0）">
                     <div class="spark-bar "
-                         style="height: 1%"></div>
+                         style="height: 50.0%"></div>
                     <span class="spark-label">六</span>
                 </div>
                 
-                <div class="spark-col" title="10-25：0 次（恶意 0）">
-                    <div class="spark-bar "
-                         style="height: 1%"></div>
+                <div class="spark-col" title="10-25：2 次（恶意 1）">
+                    <div class="spark-bar has-mal"
+                         style="height: 100.0%"></div>
                     <span class="spark-label">日</span>
                 </div>
                 
-                <div class="spark-col" title="10-26：0 次（恶意 0）">
-                    <div class="spark-bar "
-                         style="height: 1%"></div>
+                <div class="spark-col" title="10-26：2 次（恶意 1）">
+                    <div class="spark-bar has-mal"
+                         style="height: 100.0%"></div>
                     <span class="spark-label">一</span>
                 </div>
                 
-                <div class="spark-col" title="10-27：3 次（恶意 0）">
+                <div class="spark-col" title="10-27：2 次（恶意 0）">
                     <div class="spark-bar "
-                         style="height: 25.0%"></div>
+                         style="height: 100.0%"></div>
                     <span class="spark-label">二</span>
                 </div>
                 
@@ -496,7 +498,7 @@
     </div>
                         </div>
                         <small class="text-muted text-nowrap">
-                            🕐 2026-10-27 08:46:05
+                            🕐 2026-10-27 09:05:17
                         </small>
                     </div>
                     <small class="text-break text-muted d-block mt-1">
@@ -504,11 +506,131 @@
                         
                         <a href="javascript:void(0)"
                            class="link-primary"
-                           data-url="https://voxel.shop/"
+                           data-url="https://example.com/"
                            data-blocked="0"
                            data-reason="检测判定为恶意链接（评分 99/100）"
                            onclick="return guardedOpen(this)">
-                            https://voxel.shop/
+                            https://example.com/
+                        </a>
+                        
+                        <span class="badge bg-success ms-1">
+                            <svg class="ui-ic icon-14" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="安全"><path d="M4.6 12.4l4.8 4.9 9.9-11" stroke="#0B1020" stroke-width="4.4" opacity=".16"/><path d="M4.6 12.4l4.8 4.9 9.9-11" stroke="#34D399" stroke-width="2.6"/><path d="M5.4 12.4l3.9 4 8.9-9.8" stroke="#E0F2FE" stroke-width="1" opacity=".95"/><path d="M19.4 4.2l.5 1.35 1.35.5-1.35.5-.5 1.35-.5-1.35-1.35-.5 1.35-.5z" fill="#E0F2FE"/><circle cx="20" cy="8.2" r=".9" fill="#7DD3FC" opacity=".8"/></svg> 可访问
+                        </span>
+                        
+                    </small>
+                </li>
+                
+                <li class="list-group-item">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="flex-grow-1 min-w-0">
+                            
+    <div class="d-flex flex-wrap align-items-center gap-2 w-100">
+        <div class="progress flex-grow-1" style="height: 22px; min-width: 0; overflow: hidden;">
+            <div class="progress-bar bg-success" 
+                 role="progressbar" 
+                 style="width: 96%; min-width: fit-content;"
+                 aria-valuenow="96" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+            </div>
+        </div>
+        <small class="text-success fw-bold text-nowrap">安全 96</small>
+    </div>
+                        </div>
+                        <small class="text-muted text-nowrap">
+                            🕐 2026-10-27 08:30:17
+                        </small>
+                    </div>
+                    <small class="text-break text-muted d-block mt-1">
+                        
+                        
+                        <a href="javascript:void(0)"
+                           class="link-primary"
+                           data-url="https://docs.demo.example.net/guide"
+                           data-blocked="0"
+                           data-reason="检测判定为恶意链接（评分 96/100）"
+                           onclick="return guardedOpen(this)">
+                            https://docs.demo.example.net/guide
+                        </a>
+                        
+                        <span class="badge bg-success ms-1">
+                            <svg class="ui-ic icon-14" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="安全"><path d="M4.6 12.4l4.8 4.9 9.9-11" stroke="#0B1020" stroke-width="4.4" opacity=".16"/><path d="M4.6 12.4l4.8 4.9 9.9-11" stroke="#34D399" stroke-width="2.6"/><path d="M5.4 12.4l3.9 4 8.9-9.8" stroke="#E0F2FE" stroke-width="1" opacity=".95"/><path d="M19.4 4.2l.5 1.35 1.35.5-1.35.5-.5 1.35-.5-1.35-1.35-.5 1.35-.5z" fill="#E0F2FE"/><circle cx="20" cy="8.2" r=".9" fill="#7DD3FC" opacity=".8"/></svg> 可访问
+                        </span>
+                        
+                    </small>
+                </li>
+                
+                <li class="list-group-item">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="flex-grow-1 min-w-0">
+                            
+    <div class="d-flex flex-wrap align-items-center gap-2 w-100">
+        <div class="progress flex-grow-1" style="height: 22px; min-width: 0; overflow: hidden;">
+            <div class="progress-bar bg-danger" 
+                 role="progressbar" 
+                 style="width: 61%; min-width: fit-content;"
+                 aria-valuenow="61" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+            </div>
+        </div>
+        <small class="text-danger fw-bold text-nowrap">危险 61</small>
+    </div>
+                        </div>
+                        <small class="text-muted text-nowrap">
+                            🕐 2026-10-26 13:21:17
+                        </small>
+                    </div>
+                    <small class="text-break text-muted d-block mt-1">
+                        
+                        
+                        <a href="javascript:void(0)"
+                           class="text-danger text-decoration-line-through fw-bold"
+                           data-url="http://192.0.2.10/login.php?url=demo"
+                           data-blocked="1"
+                           data-reason="检测判定为恶意链接（评分 61/100）"
+                           onclick="return guardedOpen(this)">
+                            http://192.0.2.10/login.php?url=demo
+                        </a>
+                        
+                        <span class="badge bg-danger ms-1">
+                            <svg class="ui-ic icon-14" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="拦截"><path d="M7 3.4l1.4-2.2 1.2 2" fill="#132A4A" stroke="#38BDF8" stroke-width="1"/><path d="M17 3.4l-1.4-2.2-1.2 2" fill="#132A4A" stroke="#38BDF8" stroke-width="1"/><path d="M12 2.6 20 5.6v5.9c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V5.6z" fill="#0B1020" opacity=".32"/><path d="M12 2.6 20 5.6v5.9c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V5.6z" stroke="#22D3EE" stroke-width="2.2"/><path d="M12 2.6 20 5.6v5.9c0 5-3.5 8.3-8 10" stroke="#38BDF8" stroke-width="1" opacity=".75"/><path d="M8.3 12.2l2.6 2.7 4.9-5.4" stroke="#E0F2FE" stroke-width="1.8"/><path d="M12 4.6l.4 1.1 1.1.4-1.1.4-.4 1.1-.4-1.1-1.1-.4 1.1-.4z" fill="#E0F2FE" opacity=".85"/></svg> 已拦截
+                        </span>
+                        
+                    </small>
+                </li>
+                
+                <li class="list-group-item">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="flex-grow-1 min-w-0">
+                            
+    <div class="d-flex flex-wrap align-items-center gap-2 w-100">
+        <div class="progress flex-grow-1" style="height: 22px; min-width: 0; overflow: hidden;">
+            <div class="progress-bar bg-success" 
+                 role="progressbar" 
+                 style="width: 99%; min-width: fit-content;"
+                 aria-valuenow="99" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+            </div>
+        </div>
+        <small class="text-success fw-bold text-nowrap">安全 99</small>
+    </div>
+                        </div>
+                        <small class="text-muted text-nowrap">
+                            🕐 2026-10-26 09:44:17
+                        </small>
+                    </div>
+                    <small class="text-break text-muted d-block mt-1">
+                        
+                        
+                        <a href="javascript:void(0)"
+                           class="link-primary"
+                           data-url="https://example.com/"
+                           data-blocked="0"
+                           data-reason="检测判定为恶意链接（评分 99/100）"
+                           onclick="return guardedOpen(this)">
+                            https://example.com/
                         </a>
                         
                         <span class="badge bg-success ms-1">
@@ -536,7 +658,7 @@
     </div>
                         </div>
                         <small class="text-muted text-nowrap">
-                            🕐 2026-10-27 08:45:48
+                            🕐 2026-10-25 16:08:17
                         </small>
                     </div>
                     <small class="text-break text-muted d-block mt-1">
@@ -544,135 +666,15 @@
                         
                         <a href="javascript:void(0)"
                            class="link-primary"
-                           data-url="https://voxel.shop/"
+                           data-url="https://shop.demo.example.com/"
                            data-blocked="0"
                            data-reason="检测判定为恶意链接（评分 99/100）"
                            onclick="return guardedOpen(this)">
-                            https://voxel.shop/
+                            https://shop.demo.example.com/
                         </a>
                         
                         <span class="badge bg-success ms-1">
                             <svg class="ui-ic icon-14" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="安全"><path d="M4.6 12.4l4.8 4.9 9.9-11" stroke="#0B1020" stroke-width="4.4" opacity=".16"/><path d="M4.6 12.4l4.8 4.9 9.9-11" stroke="#34D399" stroke-width="2.6"/><path d="M5.4 12.4l3.9 4 8.9-9.8" stroke="#E0F2FE" stroke-width="1" opacity=".95"/><path d="M19.4 4.2l.5 1.35 1.35.5-1.35.5-.5 1.35-.5-1.35-1.35-.5 1.35-.5z" fill="#E0F2FE"/><circle cx="20" cy="8.2" r=".9" fill="#7DD3FC" opacity=".8"/></svg> 可访问
-                        </span>
-                        
-                    </small>
-                </li>
-                
-                <li class="list-group-item">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                        <div class="flex-grow-1 min-w-0">
-                            
-    <div class="d-flex flex-wrap align-items-center gap-2 w-100">
-        <div class="progress flex-grow-1" style="height: 22px; min-width: 0; overflow: hidden;">
-            <div class="progress-bar bg-success" 
-                 role="progressbar" 
-                 style="width: 99%; min-width: fit-content;"
-                 aria-valuenow="99" 
-                 aria-valuemin="0" 
-                 aria-valuemax="100">
-            </div>
-        </div>
-        <small class="text-success fw-bold text-nowrap">安全 99</small>
-    </div>
-                        </div>
-                        <small class="text-muted text-nowrap">
-                            🕐 2026-10-27 08:44:59
-                        </small>
-                    </div>
-                    <small class="text-break text-muted d-block mt-1">
-                        
-                        
-                        <a href="javascript:void(0)"
-                           class="link-primary"
-                           data-url="https://examcrafts.com/"
-                           data-blocked="0"
-                           data-reason="检测判定为恶意链接（评分 99/100）"
-                           onclick="return guardedOpen(this)">
-                            https://examcrafts.com/
-                        </a>
-                        
-                        <span class="badge bg-success ms-1">
-                            <svg class="ui-ic icon-14" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="安全"><path d="M4.6 12.4l4.8 4.9 9.9-11" stroke="#0B1020" stroke-width="4.4" opacity=".16"/><path d="M4.6 12.4l4.8 4.9 9.9-11" stroke="#34D399" stroke-width="2.6"/><path d="M5.4 12.4l3.9 4 8.9-9.8" stroke="#E0F2FE" stroke-width="1" opacity=".95"/><path d="M19.4 4.2l.5 1.35 1.35.5-1.35.5-.5 1.35-.5-1.35-1.35-.5 1.35-.5z" fill="#E0F2FE"/><circle cx="20" cy="8.2" r=".9" fill="#7DD3FC" opacity=".8"/></svg> 可访问
-                        </span>
-                        
-                    </small>
-                </li>
-                
-                <li class="list-group-item">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                        <div class="flex-grow-1 min-w-0">
-                            
-    <div class="d-flex flex-wrap align-items-center gap-2 w-100">
-        <div class="progress flex-grow-1" style="height: 22px; min-width: 0; overflow: hidden;">
-            <div class="progress-bar bg-danger" 
-                 role="progressbar" 
-                 style="width: 49%; min-width: fit-content;"
-                 aria-valuenow="49" 
-                 aria-valuemin="0" 
-                 aria-valuemax="100">
-            </div>
-        </div>
-        <small class="text-danger fw-bold text-nowrap">危险 49</small>
-    </div>
-                        </div>
-                        <small class="text-muted text-nowrap">
-                            🕐 2026-10-23 22:49:59
-                        </small>
-                    </div>
-                    <small class="text-break text-muted d-block mt-1">
-                        
-                        
-                        <a href="javascript:void(0)"
-                           class="text-danger text-decoration-line-through fw-bold"
-                           data-url="http://free-gift-card-now.xyz/login?token=abc"
-                           data-blocked="1"
-                           data-reason="检测判定为恶意链接（评分 49/100）"
-                           onclick="return guardedOpen(this)">
-                            http://free-gift-card-now.xyz/login?toke...
-                        </a>
-                        
-                        <span class="badge bg-danger ms-1">
-                            <svg class="ui-ic icon-14" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="拦截"><path d="M7 3.4l1.4-2.2 1.2 2" fill="#132A4A" stroke="#38BDF8" stroke-width="1"/><path d="M17 3.4l-1.4-2.2-1.2 2" fill="#132A4A" stroke="#38BDF8" stroke-width="1"/><path d="M12 2.6 20 5.6v5.9c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V5.6z" fill="#0B1020" opacity=".32"/><path d="M12 2.6 20 5.6v5.9c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V5.6z" stroke="#22D3EE" stroke-width="2.2"/><path d="M12 2.6 20 5.6v5.9c0 5-3.5 8.3-8 10" stroke="#38BDF8" stroke-width="1" opacity=".75"/><path d="M8.3 12.2l2.6 2.7 4.9-5.4" stroke="#E0F2FE" stroke-width="1.8"/><path d="M12 4.6l.4 1.1 1.1.4-1.1.4-.4 1.1-.4-1.1-1.1-.4 1.1-.4z" fill="#E0F2FE" opacity=".85"/></svg> 已拦截
-                        </span>
-                        
-                    </small>
-                </li>
-                
-                <li class="list-group-item">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                        <div class="flex-grow-1 min-w-0">
-                            
-    <div class="d-flex flex-wrap align-items-center gap-2 w-100">
-        <div class="progress flex-grow-1" style="height: 22px; min-width: 0; overflow: hidden;">
-            <div class="progress-bar bg-danger" 
-                 role="progressbar" 
-                 style="width: 49%; min-width: fit-content;"
-                 aria-valuenow="49" 
-                 aria-valuemin="0" 
-                 aria-valuemax="100">
-            </div>
-        </div>
-        <small class="text-danger fw-bold text-nowrap">危险 49</small>
-    </div>
-                        </div>
-                        <small class="text-muted text-nowrap">
-                            🕐 2026-10-23 22:49:45
-                        </small>
-                    </div>
-                    <small class="text-break text-muted d-block mt-1">
-                        
-                        
-                        <a href="javascript:void(0)"
-                           class="text-danger text-decoration-line-through fw-bold"
-                           data-url="http://free-gift-card-now.xyz/login?token=abc"
-                           data-blocked="1"
-                           data-reason="检测判定为恶意链接（评分 49/100）"
-                           onclick="return guardedOpen(this)">
-                            http://free-gift-card-now.xyz/login?toke...
-                        </a>
-                        
-                        <span class="badge bg-danger ms-1">
-                            <svg class="ui-ic icon-14" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="拦截"><path d="M7 3.4l1.4-2.2 1.2 2" fill="#132A4A" stroke="#38BDF8" stroke-width="1"/><path d="M17 3.4l-1.4-2.2-1.2 2" fill="#132A4A" stroke="#38BDF8" stroke-width="1"/><path d="M12 2.6 20 5.6v5.9c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V5.6z" fill="#0B1020" opacity=".32"/><path d="M12 2.6 20 5.6v5.9c0 5-3.5 8.3-8 10-4.5-1.7-8-5-8-10V5.6z" stroke="#22D3EE" stroke-width="2.2"/><path d="M12 2.6 20 5.6v5.9c0 5-3.5 8.3-8 10" stroke="#38BDF8" stroke-width="1" opacity=".75"/><path d="M8.3 12.2l2.6 2.7 4.9-5.4" stroke="#E0F2FE" stroke-width="1.8"/><path d="M12 4.6l.4 1.1 1.1.4-1.1.4-.4 1.1-.4-1.1-1.1-.4 1.1-.4z" fill="#E0F2FE" opacity=".85"/></svg> 已拦截
                         </span>
                         
                     </small>
