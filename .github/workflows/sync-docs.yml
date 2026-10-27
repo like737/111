@@ -4,12 +4,11 @@ name: sync-docs
 #
 # 为什么是"开 PR"而不是"直接 push main"：
 #   main 已启用分支保护，要求走 Pull Request。而个人账号仓库（owner 是 User
-#   而非 Organization）不允许把 GitHub Actions 应用加入分支保护的 bypass 列表
-#   —— 经典保护 API 返回 422 "Only organization repositories can have users and
-#   team restrictions"，规则集 API 返回 422 "Actor GitHub Actions integration
-#   must be part of the ruleset source or owner organization"。
-#   因此改为：机器人把快照推到固定分支并开/更新 PR，由管理员合并（管理员不受
-#   保护规则约束，可直接合并）。好处是不需要任何 PAT 密钥。
+#   而非 Organization）不允许把 GitHub Actions 应用加入分支保护的 bypass 列表：
+#     - 经典保护 API -> 422 Only organization repositories can have users and team restrictions
+#     - 规则集 API   -> 422 Actor GitHub Actions integration must be part of the ruleset source or owner organization
+#   因此改为：机器人把快照推到固定分支 docs/auto-sync 并开/更新 PR，由管理员合并
+#   （管理员豁免于保护规则，可一键合并）。好处是全程不需要任何 PAT 密钥。
 #
 # 为什么用 windows-latest：
 #   本项目含 Windows 专用模块（guard 的系统代理 / winreg），Ubuntu runner 上
@@ -80,15 +79,19 @@ jobs:
           EXISTING=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
           if [ -n "$EXISTING" ]; then
             echo "已存在开放 PR #$EXISTING，内容已更新"
-          else
-            gh pr create \
-              --base main \
-              --head "$BRANCH" \
-              --title "chore(docs): 自动同步静态快照" \
-              --body "本 PR 由 \`sync-docs\` 工作流自动生成：\`templates/\`、\`static/\` 或 \`tools/\` 变更后重新导出 \`docs/\`。
-
-合并后 GitHub Pages 会自动重新部署。
-
-- 生成方式：\`python tools/export_docs.py\`
-- 数据来源：\`config.example.json\` + 合成演示数据（不含真实密钥与浏览记录）"
+            exit 0
           fi
+
+          BODY=$(printf '%s\n' \
+            '本 PR 由 sync-docs 工作流自动生成：templates/、static/ 或 tools/ 变更后重新导出 docs/。' \
+            '' \
+            '合并后 GitHub Pages 会自动重新部署。' \
+            '' \
+            '- 生成方式：python tools/export_docs.py' \
+            '- 数据来源：config.example.json + 合成演示数据（不含真实密钥与浏览记录）')
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore(docs): 自动同步静态快照" \
+            --body "$BODY"
