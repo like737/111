@@ -135,8 +135,9 @@ def _install_probe_log_filter():
 _install_startup_quiet(not STARTUP_VERBOSE)
 _install_probe_log_filter()
 
-from config import Config
-from detector import Detector
+from config import Config  # noqa: E402
+from detector import Detector  # noqa: E402
+from ml_url_model import WARN_PROB_LOW, prob_display_label  # noqa: E402
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'malicious-url-detection-2024'
@@ -448,33 +449,65 @@ def get_result_html(result):
     # (用字符串拼接而非 %/.format, 避免模板里的 % 或 {} 被误解析)
     ml_block_html = ''
     if getattr(result, 'ml_prob', None) is not None:
-        _ml_bad = bool(getattr(result, 'ml_verdict', 0))
-        _ml_badge = ('<span class="badge bg-danger">模型: 恶意</span>' if _ml_bad
-                     else '<span class="badge bg-success">模型: 正常</span>')
-        _ml_mode_txt = ('判定参与(enforce)' if getattr(result, 'ml_mode', '') == 'enforce'
-                        else '仅记录(shadow)')
-        _ml_high_txt = '是' if getattr(result, 'ml_high', False) else '否'
-        # 各通道独立展示(域名模型 / 路径模型)
+        _thresholds = dict(getattr(result, 'ml_thresholds', {}) or {})
+        _ml_bad = bool(getattr(result, 'ml_verdict', 0))       # 模型是否"达到阈值"（拦截）
+        _label_badge = {'正常': 'bg-success', '可疑': 'bg-warning text-dark',
+                        '拦截': 'bg-danger', '未知': 'bg-secondary'}
+        _labels = {}
         _rows = ''
-        for _name, _label in (('domain', '域名模型'), ('path', '路径模型')):
+        # 逐通道判定展示标签: 低于警告线=正常; [0.90, 阈值)=可疑; >=阈值=拦截
+        for _name, _display in (('domain', '域名模型'), ('path', '路径模型')):
             _p = getattr(result, 'ml_' + _name + '_prob', None)
             if _p is None:
                 continue
-            _is_bad = float(_p) >= ((getattr(result, 'ml_thresholds', {}) or {}).get(_name) or 0.5)
-            _rows += ('<li><strong>' + _label + ':</strong> ' + ('%.4f' % float(_p)) + '　'
-                      + ('<span class="badge bg-danger">恶意</span>' if _is_bad
-                         else '<span class="badge bg-success">正常</span>') + '</li>')
+            _thr = _thresholds.get(_name)
+            _label = prob_display_label(_p, _thr)
+            _labels[_name] = _label
+            _thr_txt = ('%.4f' % float(_thr)) if _thr is not None else '—'
+            if _thr is not None and float(_thr) > WARN_PROB_LOW:
+                _range_txt = '阈值 %s（警告区间 ≥%.2f 且 &lt;阈值）' % (_thr_txt, WARN_PROB_LOW)
+            elif _thr is not None:
+                _range_txt = '阈值 %s（≥阈值即拦截；无警告区间）' % _thr_txt
+            else:
+                _range_txt = '阈值 —（未配置，无法判定区间）'
+            _rows += ('<li><strong>' + _display + ':</strong> ' + ('%.4f' % float(_p))
+                      + '　<span class="badge ' + _label_badge.get(_label, 'bg-secondary') + '">'
+                      + _label + '</span>'
+                      + '<small class="text-muted ms-2">' + _range_txt + '</small></li>')
+
+        # 综合展示标签: 拦截 > 可疑 > 正常（"可疑优先于正常"）
+        # 没有通道落入警告区间时，综合标签不会是"可疑"（不强行输出）。
+        _priority = {'拦截': 3, '可疑': 2, '正常': 1, '未知': 0}
+        _ml_label = '未知'
+        for _label in _labels.values():
+            if _priority.get(_label, 0) > _priority.get(_ml_label, 0):
+                _ml_label = _label
+        _ml_badge = ('<span class="badge ' + _label_badge.get(_ml_label, 'bg-secondary')
+                     + '">模型: ' + _ml_label + '</span>')
+        _ml_mode_txt = ('判定参与(enforce)' if getattr(result, 'ml_mode', '') == 'enforce'
+                        else '仅记录(shadow)')
+        _ml_high_txt = '是' if getattr(result, 'ml_high', False) else '否'
         _convict_txt = ('、'.join(getattr(result, 'ml_convict', []) or [])
                         or ('、'.join(getattr(result, 'ml_hint', []) or []) + '（仅提示）' if getattr(result, 'ml_hint', None) else '—'))
+        _warn_names = [_display for _name, _display in (('domain', '域名模型'), ('path', '路径模型'))
+                       if _labels.get(_name) == '可疑']
         ml_block_html = (
             '<div class="row mt-3"><div class="col-12">'
             '<h6>' + str(render_icon('shield', 16, 'ML')) + ' ML模型判定 (MaliciousURLs)</h6>'
             '<ul class="list-unstyled mb-0">'
             + _rows +
-            '<li><strong>综合概率:</strong> ' + ('%.4f' % float(result.ml_prob)) + '　' + _ml_badge + '</li>'
+            '<li><strong>综合概率:</strong> ' + ('%.4f' % float(result.ml_prob)) + '　' + _ml_badge
+            + '<small class="text-muted ms-2">（综合标签取各通道中最严的一项）</small></li>'
             '<li><strong>高置信:</strong> ' + _ml_high_txt + '　<strong>模式:</strong> ' + _ml_mode_txt
             + '　<strong>参与拦截的通道:</strong> ' + _convict_txt + '</li>'
             '</ul></div></div>')
+        # 有通道落在警告区间 → 明确提示"仅提示、未拦截"（即使另一通道已拦截，也说明该通道状态）
+        if _warn_names:
+            ml_block_html += ('<div class="alert alert-warning py-2 mt-2 mb-0">'
+                              '<small>⚠ 通道 <strong>' + '、'.join(_warn_names)
+                              + '</strong> 的概率落在警告区间 [%.2f, 各通道阈值)：'
+                              '<strong>仅提示、未拦截</strong>，建议人工复核。'
+                              '</small></div>' % WARN_PROB_LOW)
         # 说明标注: 让用户知道这条结论来自哪一路信号, 避免"分数/结论"观感矛盾
         if _ml_bad and getattr(result, 'ml_high', False):
             if ml_only_conviction:

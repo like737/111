@@ -27,6 +27,40 @@ import urllib.parse
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
+# 展示层概率区间: [WARN_PROB_LOW, 各通道阈值) = 可疑; >= 阈值 = 拦截。
+# 注意: 这只是"页面标签"口径，**不参与**模型 verdict / 拦截判定，也不改变任何阈值。
+WARN_PROB_LOW = 0.90
+
+
+def prob_display_label(prob, threshold, warn_low=WARN_PROB_LOW):
+    """概率 → 展示标签（正常 / 可疑 / 拦截 / 未知）
+
+    区间（左闭右开）:
+      [0, warn_low)            -> 正常
+      [warn_low, threshold)    -> 可疑
+      [threshold, 1]           -> 拦截
+
+    边界:
+      * prob == 0.90            -> 可疑（属于警告区间，不是正常）
+      * prob == threshold       -> 拦截（阈值本身属于拦截区间）
+      * threshold <= 0.90 时（如路径模型阈值 0.61）警告区间为空:
+        达到阈值即"拦截"、未达到即"正常"，不会把 0.90 与阈值混用。
+
+    该函数只用于展示，不修改原始概率与模型判定。
+    """
+    if prob is None:
+        return "未知"
+    try:
+        p = float(prob)
+        t = float(threshold)
+    except (TypeError, ValueError):
+        return "未知"
+    if p >= t:
+        return "拦截"
+    if t > float(warn_low) and p >= float(warn_low):
+        return "可疑"
+    return "正常"
+
 
 class MLUrlModel(object):
     """MaliciousURLs 模型适配层(只读, 异常安全)"""
@@ -476,7 +510,7 @@ class MLChannel(object):
                 continue
             lines.append('[ML] %s: 概率 %.4f (阈值 %.4f) -> %s'
                          % (label.get(name, name), r['prob'], r['threshold'] or 0.0,
-                            '恶意' if r['verdict'] else '正常'))
+                            prob_display_label(r['prob'], r['threshold'])))
         return lines
 
     def describe(self):

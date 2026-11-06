@@ -349,10 +349,17 @@ curl -X POST -d "entry=pornvideotop.com" http://127.0.0.1:5000/blacklist/remove_
 | `ml_url_model.py` | 新增 `DomainURLModel`（域名模型适配）、`host_struct_features`（20 维结构特征）、`MLChannel`（多模型管理器）；原 `MLUrlModel` 保留 |
 | `detector.py` | `Detector.__init__` 改用 `MLChannel`（双通道）；`detect()` 的 ML 块按通道追加详情与定罪；`DetectionResult` 新增 `ml_domain_prob / ml_path_prob / ml_convict / ml_hint / ml_thresholds` |
 | `config.py` / `config.json` | 新增 `detection.ml_models`（domain / path 各自 enabled、path、confidence、trigger_intercept）；旧键保留作回退 |
-| `web_app.py` | ML 区块改为**分通道展示**（域名模型/路径模型各一行 + 综合概率 + 参与拦截的通道） |
+| `web_app.py` | ML 区块改为**分通道展示**（域名模型/路径模型各一行 + 综合概率 + 参与拦截的通道）；每个通道与综合概率按展示口径标注 **正常 / 可疑 / 拦截** |
 | `verify_ml_shadow.py` | 降级测试改为覆盖双模型（双缺 / 仅缺域名模型） |
 | `ml_training/` | **新增**：`build_domain_dataset.py`（Phase 0）、`train_domain_model.py`（Phase 1）、`README.md`（含红线与实测） |
 | `data/models/` | `domain_model.pkl`(11.7MB, 新)、`path_model.pkl`(2.31MB, 副本)、`archive/path-v1-20260922.pkl`(归档)；`lgs_model.pickle` **保留未删** |
+
+> **展示标签口径（只影响页面标签，不参与判定/拦截）**：
+> 概率低于 `0.90` → **正常**；`[0.90, 该通道阈值)` → **可疑**；`≥ 阈值` → **拦截**。
+> 综合标签取各通道中最严的一项（拦截 > 可疑 > 正常）；没有通道落入警告区间时**不会**显示“可疑”。
+> 阈值 ≤ 0.90 的通道（如路径模型 0.61）警告区间为空：达到阈值即“拦截”，未达到即“正常”。
+> 例：域名模型 `0.9899`（阈值 `0.9984`）显示“可疑”，路径模型 `0.0186`（阈值 `0.61`）显示“正常”，
+> 综合显示“可疑”；各通道原始概率与单独结论均完整保留。
 
 ### 线上配置（按实测指标设定）
 
