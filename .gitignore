@@ -57,3 +57,11 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 *.swp
+
+# ---------- guard 运行期状态与访问日志（本地生成，不入库）----------
+guard/data/access_log.json
+guard/data/allow.json
+guard/data/dynamic_block.json
+guard/data/logwatch_state.json
+guard/data/stats.json
+guard/data/sysproxy_state.json
